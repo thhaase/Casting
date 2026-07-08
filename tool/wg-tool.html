@@ -47,6 +47,11 @@ button { font-family: inherit; }
 .btn:hover { transform: translateY(-1px); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; font-weight: 600; }
+.btn.btn-danger { background: #dc2626; border-color: #dc2626; color: #fff; }
+.btn.btn-danger:hover { background: #b91c1c; border-color: #b91c1c; }
+.del-list { display: flex; flex-direction: column; gap: .3rem; margin: .6rem 0; max-height: 45vh; overflow-y: auto; }
+.del-row { display: flex; align-items: center; gap: .6rem; padding: .4rem .5rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
+.del-row input { width: auto; }
 input, select, textarea {
   font-family: inherit; font-size: .9rem; color: var(--text); background: var(--card-bg);
   border: 1px solid var(--border); border-radius: 8px; padding: .45rem .6rem;
@@ -247,6 +252,7 @@ table.grid td.cell.mine { background: var(--accent); }
     <section id="tab-over" class="card">
       <div class="over-toolbar">
         <button class="btn" id="addApplBtn">➕ Bewerber:in hinzufügen</button>
+        <button class="btn" id="delApplBtn">🗑️ Bewerber:in löschen</button>
         <button class="btn" id="aiSettingsBtn" style="font-size:.8rem">⚙️ KI-Einstellungen</button>
       </div>
       <div id="applList"><p class="muted">Lade Bewerber:innen …</p></div>
@@ -380,6 +386,16 @@ async function api(action, payload = {}) {
       list.push(app); s.applicants = list; mockSave(s);
       return { ok: true, applicant: app, raw: "(Testmodus: kein KI-Text)" };
     }
+    if (action === "delete_applicant") {
+      const names = payload.names || (payload.applicant ? [payload.applicant] : []);
+      const list = s.applicants || CONFIG.FALLBACK_APPLICANTS.slice();
+      s.applicants = list.filter(a => !names.includes(a.name));
+      s.votes = (s.votes || []).filter(v => !names.includes(v.applicant));
+      s.avail = (s.avail || []).filter(v => !names.includes(v.applicant));
+      s.meetings = (s.meetings || []).filter(m => !names.includes(m.applicant));
+      mockSave(s);
+      return { ok: true, deleted: names };
+    }
     if (action === "vote") { mockUpsert(s.votes, payload.applicant, payload.voter, { rating: payload.rating, comment: payload.comment }); mockSave(s); return { ok: true }; }
     if (action === "avail") { mockUpsert(s.avail, payload.applicant, payload.voter, { slotsJSON: payload.slots }); mockSave(s); return { ok: true }; }
     if (action === "meeting") { const { applicant, ...rest } = payload; mockUpsertMeeting(s.meetings, applicant, rest); mockSave(s); return { ok: true }; }
@@ -463,6 +479,7 @@ document.querySelectorAll(".tabs .btn[data-tab]").forEach(b => {
 
 // -------- Bewerber:in hinzufügen / KI-Einstellungen (Buttons) --------
 $("#addApplBtn").addEventListener("click", openAddApplicant);
+$("#delApplBtn").addEventListener("click", openDeleteApplicant);
 $("#aiSettingsBtn").addEventListener("click", openAiSettings);
 
 // ======================================================================
@@ -655,6 +672,89 @@ function openAddApplicant() {
   });
   openModal(box);
   nameInp.focus();
+}
+function openDeleteApplicant() {
+  // Schritt 1: auswählen, wer gelöscht werden soll.
+  const box = el("div");
+  box.appendChild(el("h3", null, "Bewerber:in löschen"));
+  if (!APPLICANTS.length) {
+    box.appendChild(el("p", "form-note", "Es sind keine Bewerber:innen vorhanden."));
+    const actions = el("div", "modal-actions");
+    const ok = el("button", "btn", "Schließen");
+    ok.addEventListener("click", closeModal);
+    actions.appendChild(ok); box.appendChild(actions);
+    openModal(box); return;
+  }
+  box.appendChild(el("p", "form-note", "Wähle die Person(en), die du löschen möchtest. Danach musst du das Löschen noch bestätigen."));
+
+  const listWrap = el("div", "del-list");
+  const boxes = [];
+  APPLICANTS.forEach(app => {
+    const row = el("label", "del-row");
+    const cb = el("input"); cb.type = "checkbox"; cb.value = app.name;
+    boxes.push(cb);
+    row.appendChild(cb);
+    row.appendChild(el("span", null, app.name + (app.alter ? " (" + app.alter + ")" : "")));
+    listWrap.appendChild(row);
+  });
+  box.appendChild(listWrap);
+  const err = el("p", "form-err");
+  box.appendChild(err);
+
+  const actions = el("div", "modal-actions");
+  const next = el("button", "btn btn-danger", "Weiter …");
+  const cancel = el("button", "btn", "Abbrechen");
+  actions.appendChild(next); actions.appendChild(cancel);
+  box.appendChild(actions);
+
+  cancel.addEventListener("click", closeModal);
+  next.addEventListener("click", () => {
+    const selected = boxes.filter(cb => cb.checked).map(cb => cb.value);
+    if (!selected.length) { err.textContent = "Bitte mindestens eine Person auswählen."; return; }
+    confirmDeleteApplicants(selected);
+  });
+  openModal(box);
+}
+function confirmDeleteApplicants(names) {
+  // Schritt 2: endgültige Bestätigung.
+  const box = el("div");
+  box.appendChild(el("h3", null, "Wirklich löschen?"));
+  const warn = el("p", "form-note");
+  warn.innerHTML = "Folgende Person(en) werden <b>endgültig</b> aus der Datenbank gelöscht – samt ihrer Votes, Verfügbarkeiten und Termine. Das kann nicht rückgängig gemacht werden.";
+  box.appendChild(warn);
+  const ul = el("ul");
+  names.forEach(n => ul.appendChild(el("li", null, n)));
+  box.appendChild(ul);
+  const err = el("p", "form-err");
+  box.appendChild(err);
+
+  const actions = el("div", "modal-actions");
+  const del = el("button", "btn btn-danger", "🗑️ Endgültig löschen");
+  const back = el("button", "btn", "Abbrechen");
+  actions.appendChild(del); actions.appendChild(back);
+  box.appendChild(actions);
+
+  back.addEventListener("click", closeModal);
+  del.addEventListener("click", async () => {
+    err.textContent = "";
+    del.disabled = true; back.disabled = true;
+    const label = del.textContent; del.textContent = "Lösche …";
+    try {
+      const r = await api("delete_applicant", { names });
+      if (r && r.ok) {
+        await loadApplicants();
+        renderOverview();
+        closeModal();
+      } else {
+        err.textContent = (r && r.error) || "Konnte nicht löschen.";
+      }
+    } catch (e) {
+      err.textContent = "Netzwerkfehler: " + e;
+    } finally {
+      del.disabled = false; back.disabled = false; del.textContent = label;
+    }
+  });
+  openModal(box);
 }
 function openAiSettings() {
   const box = el("div");

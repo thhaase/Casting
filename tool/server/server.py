@@ -248,6 +248,29 @@ def api():
                            aiConfigured=bool(get_setting(db, "gemini_api_key")),
                            aiModel=get_setting(db, "gemini_model", DEFAULT_MODEL))
 
+        if action == "delete_applicant":
+            names = params.get("names")
+            if not isinstance(names, list):
+                one = str(params.get("applicant") or params.get("name") or "").strip()
+                names = [one] if one else []
+            names = [str(n).strip() for n in names if str(n).strip()]
+            if not names:
+                return jsonify(ok=False, error="Keine Bewerber:innen angegeben.")
+            deleted = []
+            for name in names:
+                exists = db.execute(
+                    "SELECT 1 FROM applicants WHERE name = ?", (name,)
+                ).fetchone()
+                if not exists:
+                    continue
+                db.execute("DELETE FROM applicants WHERE name = ?", (name,))
+                db.execute("DELETE FROM votes WHERE applicant = ?", (name,))
+                db.execute("DELETE FROM avail WHERE applicant = ?", (name,))
+                db.execute("DELETE FROM meetings WHERE applicant = ?", (name,))
+                deleted.append(name)
+            db.commit()
+            return jsonify(ok=True, deleted=deleted)
+
         if action == "add_applicant":
             return add_applicant(db, params)
 
