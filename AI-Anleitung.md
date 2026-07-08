@@ -4,7 +4,7 @@ Fasse den Text in Stichpunkten zusammen. Nutze präzise, straight to the point l
 
 Erstelle immer zuerst den YAML-Header, danach die Stichpunkt-Sektionen. Das Ergebnis muss als vollständige Notiz (Header + Sektionen) ausgegeben werden, nicht als reiner Fließtext.
 
-**Wichtig:** Gib die fertige Notiz komplett in **einem einzigen Codeblock** aus – YAML-Header und Stichpunkt-Sektionen zusammen, von der ersten `---` bis zur letzten Zeile. So lässt sich die Notiz über den Copy-Button mit einem Klick übernehmen und 1:1 in Obsidian einfügen. Kein Fließtext davor/danach, keine separaten Codeblöcke pro Abschnitt.
+**Wichtig:** Gib **nur** die fertige Notiz aus – YAML-Header und Stichpunkt-Sektionen zusammen, von der ersten `---` bis zur letzten Zeile. Kein Fließtext davor/danach, keine separaten Codeblöcke pro Abschnitt. So kann sie automatisch weiterverarbeitet werden.
 
 ## YAML-Header
 

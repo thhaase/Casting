@@ -1,24 +1,20 @@
 # WG-Casting – selbst gehostetes Backend (Docker)
 
-Alles-in-einem Container: baut die statische Seite aus den Bewerber-Notizen,
-liefert sie aus **und** stellt das eigene Backend (`/api`, Flask + SQLite)
-bereit. Ersetzt das frühere Google-Apps-Script + Google-Sheet.
+Alles-in-einem Container: liefert die App-Seite (`wg-tool.html`) aus **und**
+stellt das eigene Backend (`/api`, Flask + SQLite) bereit.
 
 ```
-Bewerber/*.md ──build_site.sh──► statische Seite (index.html, wg-tool.html …)
-                                          │  (im Image gebaut)
-                                          ▼
                     ┌─────────────  ein Container  ─────────────┐
                     │  gunicorn → Flask server.py               │
-                    │    /            statische Seite           │
+                    │    /            App-Seite (wg-tool.html)  │
                     │    /api         Votes/Termine/Bewerber:innen │
                     │  SQLite  /data/casting.db  (Volume)        │
                     └───────────────────────────────────────────┘
 ```
 
-Die Bewerber:innen liegen jetzt in der **Datenbank** (Quelle der Wahrheit).
-Beim allerersten Start werden sie einmalig aus den vorhandenen Notizen
-(`applicants.json`) übernommen; danach kommen neue über die App dazu.
+Die Bewerber:innen liegen in der **Datenbank** (Quelle der Wahrheit). Beim
+allerersten Start wird sie einmalig aus `seed_applicants.json` befüllt; danach
+kommen neue ausschließlich über die App dazu.
 
 ---
 
@@ -44,10 +40,9 @@ docker compose down         # stoppen
 docker compose up -d --build   # nach Änderungen neu bauen & starten
 ```
 
-> Nach dem Ändern von Bewerber-Notizen (`Bewerber/*.md`) oder der Tool-Seite
-> muss neu gebaut werden (`--build`). Die **Bewerber:innen** werden aber nur
-> beim allerersten Start geseedet – spätere Notiz-Änderungen landen nicht
-> automatisch in der DB (die DB ist jetzt führend). Neue Bewerber:innen legst
+> Nach dem Ändern der App-Seite (`tool/wg-tool.html`) oder des Backends muss
+> neu gebaut werden (`--build`). `seed_applicants.json` wird nur beim allerersten
+> Start (leere DB) eingelesen – die DB ist danach führend. Neue Bewerber:innen legst
 > du über den Button **„➕ Bewerber:in hinzufügen“** an.
 
 ---
@@ -125,11 +120,12 @@ kann der Port dann auf `127.0.0.1:8000:8000` beschränkt werden, damit nur Caddy
 cd tool/server
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-../../build_site.sh ../../dist                       # Seite + applicants.json bauen
-CASTING_DB=./casting.db STATIC_DIR=../../dist \
-  SEED_APPLICANTS=../../dist/applicants.json \
-  gunicorn -b 127.0.0.1:8000 server:app
+mkdir -p static && cp ../wg-tool.html static/        # App-Seite bereitstellen
+CASTING_DB=./casting.db STATIC_DIR=./static ANLEITUNG_PATH=../../AI-Anleitung.md \
+  gunicorn -b 127.0.0.1:8000 server:app             # -> http://localhost:8000
 ```
+
+(`SEED_APPLICANTS` zeigt per Default schon auf `seed_applicants.json` neben `server.py`.)
 
 Beim Öffnen von `wg-tool.html` per Doppelklick (`file://`) läuft die Seite im
 **Testmodus** (nur `localStorage`, kein Backend, keine echte KI).

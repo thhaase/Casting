@@ -3,9 +3,9 @@
 WG-Casting Tool – selbst gehostetes Backend (Flask + SQLite)
 ============================================================
 
-Ersetzt das Google-Apps-Script-Backend (../apps-script/Code.gs) durch einen
-kleinen eigenen Server und ist zugleich die "Quelle der Wahrheit" für die
-Bewerber:innen (früher: Obsidian-Notizen -> applicants.json).
+Kleiner eigener Server, der die App-Seite (wg-tool.html) UND das /api ausliefert
+und zugleich die "Quelle der Wahrheit" für die Bewerber:innen ist. Beim ersten
+Start wird die DB einmalig aus seed_applicants.json befüllt.
 
 Ein einziger Endpunkt /api nimmt JSON `{action, code, ...}` entgegen und
 liefert JSON `{ok, ...}` zurück.
@@ -52,7 +52,7 @@ REPO_ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 
 ACCESS_CODE = os.environ.get("ACCESS_CODE", "wg-casting")
 DB_PATH = os.environ.get("CASTING_DB", os.path.join(HERE, "casting.db"))
-SEED_APPLICANTS = os.environ.get("SEED_APPLICANTS", os.path.join(HERE, "applicants.json"))
+SEED_APPLICANTS = os.environ.get("SEED_APPLICANTS", os.path.join(HERE, "seed_applicants.json"))
 ANLEITUNG_PATH = os.environ.get("ANLEITUNG_PATH", os.path.join(REPO_ROOT, "AI-Anleitung.md"))
 DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
 STATIC_DIR = os.environ.get("STATIC_DIR")  # optional
@@ -434,7 +434,8 @@ def parse_note(md):
 if STATIC_DIR:
     @app.route("/")
     def index():
-        return send_from_directory(STATIC_DIR, "index.html")
+        # Die App selbst ist die Startseite (keine separate Übersichtsseite mehr).
+        return send_from_directory(STATIC_DIR, "wg-tool.html")
 
     @app.route("/<path:path>")
     def static_files(path):

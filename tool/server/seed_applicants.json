@@ -1,0 +1,177 @@
+[
+  {
+    "name": "Aida",
+    "status": "Beworben",
+    "alter": 23,
+    "studium_beruf": "Master Chemie, HiWi (ipf)",
+    "kennenlernen": "Vor Ort",
+    "einzug": "offen",
+    "eindruck": null,
+    "situation": [
+      "23 Jahre alt, kommt aus Indien",
+      "Masterstudium Chemie (TU Dresden)",
+      "studentische Hilfskraft am Leibniz-Institut für Polymerforschung (ipf)",
+      "wohnt aktuell in einem Dresdner Studentenwohnheim"
+    ],
+    "person": [
+      "Nichtraucherin, besitzt keine Haustiere",
+      "Hobbys: malen und basteln",
+      "spricht Englisch, Deutsch und Malayalam"
+    ],
+    "erwartung": [
+      "ruhiges und ordentliches Zusammenleben"
+    ]
+  },
+  {
+    "name": "Amy",
+    "status": "Beworben",
+    "alter": 23,
+    "studium_beruf": "Theologiestudium & Tänzerin",
+    "kennenlernen": "Online",
+    "einzug": "offen",
+    "eindruck": null,
+    "situation": [
+      "23 Jahre alt, lebte zuletzt 1,5 Jahre in Offenbach",
+      "arbeitete als Tanzlehrerin (Tanzschulen, evangelische Freikirche)",
+      "beginnt Theologiestudium in Dresden",
+      "arbeitet parallel als Praxispartnerin bei Campus für Christus (Tänzerin)",
+      "bringt bereits WG-Erfahrung mit"
+    ],
+    "person": [
+      "lebensfroh, kreativ und humorvoll",
+      "liebt Gemeinschaft und Sport (größte Leidenschaft: Tanzen)",
+      "musikalisch (spielt Klavier, singt, hört viel Musik)",
+      "strukturiert, zuverlässig, mit leichtem Hang zum Perfektionismus"
+    ],
+    "erwartung": [
+      "gemeinschaftliches und wertschätzendes Miteinander",
+      "lebt Gastfreundschaft und empfängt gerne Besuch",
+      "offene Kommunikation und gute Gemeinschaft",
+      "Lust auf gemeinsame Unternehmungen"
+    ]
+  },
+  {
+    "name": "Jasmin",
+    "status": "Beworben",
+    "alter": 19,
+    "studium_beruf": "Lehramtsstudium (TU Dresden)",
+    "kennenlernen": "Online",
+    "einzug": "offen",
+    "eindruck": null,
+    "situation": [
+      "19 Jahre alt, nach dem Abitur ein Jahr als Au Pair in Irland gearbeitet",
+      "startet Lehramtsstudium an der TU Dresden",
+      "sucht WG-Zimmer in Universitätsnähe",
+      "wohnt aktuell weiter weg (bevorzugt daher ein erstes Online-Kennenlernen)"
+    ],
+    "person": [
+      "offen, naturverbunden (wandern, lange Gespräche)",
+      "sportlich, liest aber auch gerne mal ein Buch im Zimmer"
+    ],
+    "erwartung": [
+      "entspanntes Miteinander und offene Kommunikation (keine reine Zweck-WG)",
+      "Interesse an gemeinsamen Film-, Koch- und Spieleabenden sowie Zeit auf dem Balkon"
+    ]
+  },
+  {
+    "name": "Julia",
+    "status": "Beworben",
+    "alter": 22,
+    "studium_beruf": "Fremdsprachenassistentin",
+    "kennenlernen": "Online",
+    "einzug": "01.09. (für 10 Monate)",
+    "eindruck": null,
+    "situation": [
+      "hat Übersetzen und Dolmetschen (Englisch/Deutsch) in Spanien studiert",
+      "wird als Fremdsprachenassistentin in Kamenz arbeiten",
+      "sucht ein befristetes Zimmer ab 01.09. für 10 Monate",
+      "befindet sich aktuell noch in Spanien (Kennenlernen per FaceTime gewünscht)"
+    ],
+    "person": [
+      "entspannt, sauber und ordentlich",
+      "bringt WG-Erfahrung mit",
+      "gesellig, schätzt sozialen Kontakt (gerne für Gespräche und ein gemeinsames Bier zu haben)",
+      "sportlich (Laufen, Badminton) und kocht gerne (insbesondere spanisch)"
+    ],
+    "erwartung": [
+      "soziales Miteinander im WG-Alltag (keine reine Zweck-WG)"
+    ]
+  },
+  {
+    "name": "Lina",
+    "status": "Beworben",
+    "alter": 18,
+    "studium_beruf": "FSJ",
+    "kennenlernen": "Online",
+    "einzug": "Anfang September",
+    "eindruck": null,
+    "situation": [
+      "18 Jahre alt (wird im September 19)",
+      "Abitur gerade abgeschlossen, wohnt aktuell in Bremen",
+      "beginnt Anfang September ein FSJ in Dresden",
+      "sucht ihr erstes WG-Zimmer (bisher keine WG-Erfahrung)",
+      "wünscht Online-Kennenlernen (wohnt weiter weg und ist demnächst viel unterwegs)"
+    ],
+    "person": [
+      "gesellig, unternimmt viel mit Freunden (Café, Park, Tanzen, Musik- und Freizeitveranstaltungen)",
+      "genießt und braucht auch Zeit für sich alleine",
+      "Hobbys in der \"Me-Time\": spazieren gehen, gelegentlich Sport, backen"
+    ],
+    "erwartung": [
+      "offen und gespannt auf den allgemeinen Ablauf des WG-Lebens",
+      "keine weiteren spezifischen Erwartungen an das Zusammenleben im Text formuliert"
+    ]
+  },
+  {
+    "name": "Mathumitha",
+    "status": "Beworben",
+    "alter": null,
+    "studium_beruf": "Master Molecular Bioengineering",
+    "kennenlernen": "Vor Ort",
+    "einzug": "ab August",
+    "eindruck": null,
+    "situation": [
+      "Masterstudentin (Molecular Bioengineering) an der TU Dresden",
+      "beginnt ab August mit der Abschlussarbeit"
+    ],
+    "person": [
+      "aufgeschlossen und extrovertiert",
+      "respektiert Ruhe und Rückzugsbedarf der Mitbewohner:innen",
+      "legt großen Wert auf Sauberkeit, Ordnung und gemeinsame Standards",
+      "Hobbys: Tanzen (Salsa), in der Natur unterwegs, Badminton",
+      "lebendig und verlässlich"
+    ],
+    "erwartung": [
+      "gemütliches Zuhause für die Phase der Abschlussarbeit",
+      "gutes Miteinander und das Teilen schöner Momente",
+      "Wahrung persönlicher Grenzen"
+    ]
+  },
+  {
+    "name": "Raghavi",
+    "status": "Beworben",
+    "alter": 24,
+    "studium_beruf": "Master Regenerative Biology (TUD)",
+    "kennenlernen": "Vor Ort",
+    "einzug": "offen",
+    "eindruck": null,
+    "situation": [
+      "24 Jahre alt, stammt aus Indien",
+      "Masterstudium in \"Regenerative Biology and Medicine\" an der TU Dresden",
+      "arbeitet nebenher als wissenschaftliche Mitarbeiterin am MPI-CBG (Finanzierung gesichert)",
+      "unter der Woche meistens im Labor, sucht Rückzugsort zum Entspannen",
+      "bringt WG-Erfahrung aus einer 6er-WG mit",
+      "SCHUFA-Auskunft liegt bereits vor, Übernahme von Möbeln wäre möglich"
+    ],
+    "person": [
+      "freundlich, respektvoll, unkompliziert, zuverlässig",
+      "Interessen: Häkeln, Gebäck essen, Cafés erkunden, Wandern, Dresden entdecken",
+      "schätzt Sauberkeit und Zuverlässigkeit bei WG-Aufgaben (Putzplan kein Problem)"
+    ],
+    "erwartung": [
+      "gutes WG-Leben mit angenehmer Atmosphäre (Tee trinken, gemeinsam kochen/essen, Filme schauen)",
+      "richtige Balance zwischen Gemeinschaft und Respekt vor Privatsphäre/Ruhezeiten",
+      "möchte positiv zum WG-Leben beitragen"
+    ]
+  }
+]
