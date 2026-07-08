@@ -1,0 +1,13 @@
+# Laufzeit-/Build-Artefakte
+data/
+dist/
+static/
+*.db
+
+# Python
+__pycache__/
+*.pyc
+tool/server/.venv/
+
+# Umgebungsdatei mit echten Werten (nur .env.example wird eingecheckt)
+.env

@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>WG Casting – Übersicht, Voten &amp; Termine</title>
+<style>
+:root {
+  --bg: #f7f7f9; --card-bg: #ffffff; --text: #1a1a1f; --muted: #6b7280;
+  --border: #e5e7eb; --accent: #2563eb; --row-hover: rgba(0,0,0,0.035);
+  --detail-bg: rgba(0,0,0,0.02);
+  --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 8px rgba(0,0,0,0.04);
+  --good: #16a34a; --warn: #d97706;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0d12; --card-bg: #14161c; --text: #e8e8ec; --muted: #9aa0aa;
+    --border: #262a33; --accent: #60a5fa; --row-hover: rgba(255,255,255,0.045);
+    --detail-bg: rgba(255,255,255,0.025);
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 8px rgba(0,0,0,0.3);
+    --good: #22c55e; --warn: #f59e0b;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 2rem 1.25rem 4rem; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+.wrap { max-width: 1100px; margin: 0 auto; }
+.page-header { text-align: center; margin-bottom: 1.25rem; }
+.page-header h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
+.muted { color: var(--muted); }
+h3 { margin: .2rem 0 .4rem; font-size: 1rem; }
+.card {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--shadow); padding: 1.1rem 1.2rem; margin-bottom: 1.1rem;
+}
+button { font-family: inherit; }
+.btn {
+  border: 1px solid var(--border); background: var(--card-bg); color: var(--text);
+  border-radius: 999px; padding: .45rem 1rem; font-size: .9rem; cursor: pointer;
+  transition: transform .1s ease, border-color .1s ease;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; font-weight: 600; }
+input, select, textarea {
+  font-family: inherit; font-size: .9rem; color: var(--text); background: var(--card-bg);
+  border: 1px solid var(--border); border-radius: 8px; padding: .45rem .6rem;
+}
+textarea { width: 100%; resize: vertical; min-height: 2.2rem; }
+label { font-size: .85rem; }
+.badge { display:inline-block; font-size:.72rem; padding:.1rem .55rem; border-radius:999px;
+  color:#fff; background: var(--badge-color, #64748b); }
+
+/* ---- Identity gate ---- */
+#gate { max-width: 420px; margin: 3rem auto; }
+#gate .row { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .9rem; }
+.err { color: #dc2626; font-size: .85rem; min-height: 1rem; }
+
+/* ---- Tabs ---- */
+.tabs { display: flex; gap: .5rem; justify-content: center; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.who { text-align: center; margin-bottom: 1rem; font-size: .9rem; }
+.who b { color: var(--accent); }
+
+/* ---- Applicant cards (Übersicht) ---- */
+.appl { border-top: 1px solid var(--border); padding: 1rem 0; }
+.appl:first-child { border-top: none; padding-top: .2rem; }
+.appl-head { display: grid; grid-template-columns: 1fr auto; gap: .4rem 1rem; align-items: start; }
+.appl-title { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; cursor: pointer; }
+.appl-title .chev { color: var(--muted); transition: transform .15s ease; display: inline-block; }
+.appl.open .appl-title .chev { transform: rotate(90deg); }
+.appl-name { font-weight: 600; font-size: 1.05rem; }
+.facts { font-size: .8rem; color: var(--muted); margin: .15rem 0 0; }
+.rate-box { text-align: right; }
+.stars { font-size: 1.4rem; letter-spacing: 2px; user-select: none; white-space: nowrap; }
+.star { cursor: pointer; color: var(--muted); opacity: .4; }
+.star.on { color: #f5b301; opacity: 1; }
+.agg { font-size: .82rem; color: var(--muted); margin-top: .35rem; }
+.agg .avg { color: var(--text); font-weight: 600; }
+.voter-chips { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .4rem; }
+.chip { font-size: .72rem; border: 1px solid var(--border); border-radius: 999px; padding: .1rem .5rem; color: var(--muted); }
+.chip .g { color: #f5b301; }
+.my-comment { grid-column: 1 / -1; }
+.comments { grid-column: 1 / -1; margin-top: .3rem; }
+.comment-line { font-size: .82rem; margin: .15rem 0; }
+.comment-line b { color: var(--text); }
+.saved { font-size: .75rem; color: var(--good); opacity: 0; transition: opacity .2s; }
+.saved.show { opacity: 1; }
+.detail-grid { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1rem; margin-top: .8rem; padding-top: .8rem; border-top: 1px dashed var(--border); }
+.detail-grid ul { margin: .2rem 0; padding-left: 1.1rem; }
+.detail-grid li { font-size: .85rem; margin: .15rem 0; }
+.detail-grid.hidden { display: none; }
+@media (max-width: 720px) { .detail-grid { grid-template-columns: 1fr; } }
+
+/* ---- Scheduling grid ---- */
+.sched-controls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-bottom: .8rem; }
+.grid-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+table.grid { border-collapse: collapse; font-size: .72rem; }
+table.grid th, table.grid td { border: 1px solid var(--border); text-align: center; }
+table.grid th { padding: .3rem .35rem; white-space: nowrap; background: var(--detail-bg); }
+table.grid td.time { position: sticky; left: 0; background: var(--detail-bg); white-space: nowrap; padding: .15rem .4rem; z-index: 1; font-variant-numeric: tabular-nums; }
+table.grid th.corner { position: sticky; left: 0; z-index: 3; }
+table.grid td.cell { width: 34px; height: 22px; cursor: pointer; }
+table.grid td.cell.mine { background: var(--accent); }
+.legend { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; font-size: .78rem; margin-top: .6rem; }
+.swatch { display: inline-block; width: 16px; height: 16px; border-radius: 3px; border: 1px solid var(--border); vertical-align: middle; margin-right: .3rem; }
+.best { margin-top: 1.2rem; }
+.best ol { margin: .4rem 0 0; padding-left: 1.2rem; }
+.best li { margin: .2rem 0; }
+.best .cnt { font-weight: 700; }
+
+/* ---- Ranking ---- */
+.rank { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.rank-item { display: grid; grid-template-columns: auto 1fr auto; gap: .2rem .7rem; align-items: baseline;
+  padding: .5rem 0; border-top: 1px solid var(--border); }
+.rank-item:first-of-type { border-top: none; }
+.rank-pos { font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rank-name { font-weight: 600; }
+.rank-score .avg { font-weight: 700; }
+.rank-chips { grid-column: 2 / -1; }
+
+/* ---- Nächste Schritte (Banner) ---- */
+.steps-title { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: .5rem; }
+.steps { display: flex; flex-wrap: wrap; gap: .5rem; }
+.step {
+  border: 1px solid var(--border); border-radius: 999px; padding: .4rem .85rem;
+  font-size: .85rem; cursor: pointer; background: var(--card-bg); color: var(--text);
+  display: inline-flex; align-items: center; gap: .4rem;
+}
+.step:hover { transform: translateY(-1px); }
+.step .n { font-weight: 700; }
+.step.hot { border-color: #f97316; color: #f97316; }
+.step.warn { border-color: var(--warn); color: var(--warn); }
+.step.info { color: var(--muted); cursor: default; }
+.step.done-note { color: var(--good); border-color: var(--good); cursor: default; }
+
+/* ---- Meeting-Status in der Rangliste ---- */
+.rank-item { position: relative; }
+.rank-action { grid-column: 2 / -1; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-top: .25rem; }
+.mstate { font-size: .78rem; padding: .12rem .55rem; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+.mstate.ready { color: #f97316; border-color: #f97316; font-weight: 600; }
+.mstate.proposed { color: var(--accent); border-color: var(--accent); }
+.mstate.stale { color: var(--warn); border-color: var(--warn); }
+.mstate.confirmed { color: var(--good); border-color: var(--good); font-weight: 600; }
+.act-btn { border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 999px;
+  padding: .3rem .8rem; font-size: .82rem; cursor: pointer; }
+.act-btn.ghost { background: transparent; color: var(--accent); }
+.act-btn.mini { padding: .18rem .6rem; font-size: .76rem; }
+.rank-item.closed { opacity: .5; }
+
+/* ---- Modal ---- */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 50; }
+.modal-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
+  max-width: 520px; width: 100%; max-height: 88vh; overflow-y: auto; padding: 1.3rem 1.4rem; position: relative; }
+.modal-box h3 { margin-top: 0; }
+.modal-x { position: absolute; top: .6rem; right: .8rem; border: none; background: none; font-size: 1.4rem; color: var(--muted); cursor: pointer; line-height: 1; }
+.slot-opt { display: flex; align-items: center; gap: .5rem; padding: .4rem .1rem; border-bottom: 1px solid var(--border); font-size: .9rem; }
+.slot-opt:last-child { border-bottom: none; }
+.slot-opt .cnt { color: var(--muted); font-size: .8rem; }
+.slot-opt input[type=radio], .slot-opt input[type=checkbox] { width: 1.05rem; height: 1.05rem; }
+.modal-actions { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1rem; }
+.msg-area { width: 100%; min-height: 7rem; margin-top: .6rem; font-size: .85rem; }
+.owner-row { display: flex; align-items: center; gap: .5rem; margin: .8rem 0; font-size: .88rem; }
+.hint-inline { font-size: .8rem; color: var(--muted); margin: .5rem 0; }
+
+/* ---- Toolbar + Formulare (Bewerber:in hinzufügen / KI-Einstellungen) ---- */
+.over-toolbar { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.form-field { display: flex; flex-direction: column; gap: .25rem; margin: .7rem 0; }
+.form-field label { font-size: .82rem; font-weight: 600; color: var(--muted); }
+.form-field input, .form-field textarea, .form-field select {
+  width: 100%; padding: .5rem .6rem; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--card-bg); color: inherit; font: inherit; box-sizing: border-box; }
+.form-field textarea { min-height: 9rem; resize: vertical; }
+.form-note { font-size: .8rem; color: var(--muted); margin: .3rem 0; }
+.form-err { color: #dc2626; font-size: .85rem; margin: .5rem 0 0; min-height: 1.1em; }
+.ai-badge { display: inline-block; font-size: .75rem; padding: .12rem .5rem; border-radius: 999px; }
+.ai-on { background: #16a34a22; color: #16a34a; }
+.ai-off { background: #dc262622; color: #dc2626; }
+
+/* ---- Sterne in der Rangliste ---- */
+.stars-inline { color: #f5b301; letter-spacing: 1px; font-size: 1rem; }
+
+/* ---- Castings-Kalender ---- */
+.cal-head { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: .9rem; }
+.cal-title { font-weight: 600; font-size: 1.1rem; min-width: 11rem; text-align: center; text-transform: capitalize; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-dow { text-align: center; font-size: .72rem; color: var(--muted); padding-bottom: .2rem; }
+.cal-cell { min-height: 72px; border: 1px solid var(--border); border-radius: 8px; padding: .25rem; background: var(--detail-bg); }
+.cal-cell.empty { border: none; background: transparent; }
+.cal-cell.today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.cal-day { font-size: .75rem; color: var(--muted); margin-bottom: .15rem; }
+.cal-ev { font-size: .72rem; background: var(--good); color: #06210f; border-radius: 5px; padding: .1rem .3rem; margin-top: .15rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-ev.met { opacity: .6; }
+.cal-list { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.cal-list-item { font-size: .9rem; padding: .45rem 0; border-top: 1px solid var(--border); }
+.cal-list-item:first-of-type { border-top: none; }
+.cal-present { margin-top: .25rem; display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
+.cal-present .chip { font-size: .72rem; }
+@media (max-width: 620px) {
+  .cal-cell { min-height: 56px; }
+  .cal-ev { font-size: .64rem; }
+}
+
+.hidden { display: none !important; }
+.notice { font-size: .8rem; color: var(--warn); text-align: center; margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page-header">
+    <h1>WG Casting – Übersicht, Voten &amp; Termine</h1>
+    <p class="muted">Bewerber:innen bewerten &amp; gemeinsam Termine finden</p>
+  </header>
+
+  <div id="mockNotice" class="notice hidden">⚙️ Testmodus (kein Backend verbunden) – Eingaben bleiben nur lokal in diesem Browser. <button id="resetBtn" class="btn" style="padding:.15rem .6rem;font-size:.72rem;margin-left:.4rem">🧪 Testdaten zurücksetzen</button></div>
+
+  <!-- Identity gate -->
+  <section id="gate" class="card">
+    <div class="row">
+      <label for="whoSel">Wer bist du?</label>
+      <select id="whoSel"></select>
+    </div>
+    <div class="row">
+      <label for="codeInp">Zugangscode</label>
+      <input id="codeInp" type="password" autocomplete="off" placeholder="gemeinsamer WG-Code">
+    </div>
+    <button id="enterBtn" class="btn primary">Los geht's</button>
+    <p class="err" id="gateErr"></p>
+  </section>
+
+  <!-- App -->
+  <main id="app" class="hidden">
+    <p class="who">Angemeldet als <b id="whoLabel"></b> · <button id="switchBtn" class="btn" style="padding:.15rem .6rem;font-size:.75rem">wechseln</button></p>
+    <nav class="tabs">
+      <button class="btn active" data-tab="over">👥 Übersicht &amp; Voten</button>
+      <button class="btn" data-tab="sched">📅 Termine</button>
+      <button class="btn" data-tab="cal">📆 Castings</button>
+    </nav>
+
+    <!-- Übersicht + Voten -->
+    <section id="tab-over" class="card">
+      <div class="over-toolbar">
+        <button class="btn" id="addApplBtn">➕ Bewerber:in hinzufügen</button>
+        <button class="btn" id="aiSettingsBtn" style="font-size:.8rem">⚙️ KI-Einstellungen</button>
+      </div>
+      <div id="applList"><p class="muted">Lade Bewerber:innen …</p></div>
+    </section>
+
+    <!-- Termine -->
+    <section id="tab-sched" class="hidden">
+      <div class="card" id="nextStepsCard">
+        <div class="steps-title">Nächste Schritte</div>
+        <div class="steps" id="steps"></div>
+      </div>
+      <div class="card">
+        <div class="sched-controls">
+          <div class="tabs" style="margin:0">
+            <button class="btn active" id="viewMine" style="font-size:.82rem;padding:.35rem .8rem">Meine Verfügbarkeit</button>
+            <button class="btn" id="viewAll" style="font-size:.82rem;padding:.35rem .8rem">Überblick &amp; beste Termine</button>
+          </div>
+          <span class="saved" id="schedSaved">gespeichert ✓</span>
+        </div>
+        <p class="muted" id="schedHint" style="font-size:.8rem;margin-top:0">Trag deine <b>allgemeine</b> Verfügbarkeit ein (gilt für alle Kennenlern-Termine): ziehen oder tippen zum Markieren. Wird automatisch gespeichert.</p>
+        <div class="grid-scroll"><div id="gridHost"></div></div>
+        <div class="legend" id="legend"></div>
+        <div class="best hidden" id="bestBox"></div>
+        <div class="rank hidden" id="rankBox"></div>
+      </div>
+    </section>
+
+    <!-- Castings-Kalender -->
+    <section id="tab-cal" class="hidden">
+      <div class="card" id="calCard"></div>
+    </section>
+  </main>
+</div>
+
+<!-- Modal (Termine vorschlagen / Antwort / bestätigen) -->
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <button class="modal-x" id="modalX" aria-label="schließen">×</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ======================================================================
+//  KONFIGURATION  – hier anpassen
+// ======================================================================
+const CONFIG = {
+  // Selbst gehostetes Backend (Flask, siehe tool/server/). Gleiche Herkunft
+  // wie die Seite -> einfach "/api". Beim Öffnen per Doppelklick (file://)
+  // läuft die Seite automatisch im lokalen Testmodus (kein Backend nötig).
+  APPS_SCRIPT_URL: "/api",
+
+  // Gemeinsamer Zugangscode – MUSS mit ACCESS_CODE in Code.gs übereinstimmen.
+  ACCESS_CODE: "wg-casting",
+
+  // Die 5 Mitbewohner:innen, die voten & Termine abstimmen. Bitte umbenennen!
+  FLATMATES: ["Mitbewohner:in 1", "Mitbewohner:in 2", "Mitbewohner:in 3", "Mitbewohner:in 4", "Mitbewohner:in 5"],
+
+  // Terminraster (allgemeine Verfügbarkeit)
+  DAYS_AHEAD: 14,     // wie viele Tage ab heute
+  START_HOUR: 9,      // erster Slot
+  END_HOUR: 22,       // letzter Slot (exklusiv Ende)
+  SLOT_MIN: 60,       // Slotlänge in Minuten (30 oder 60 empfohlen)
+
+  // Workflow: ab wie vielen Stimmen gilt jemand als "bereit zum Einladen",
+  // und nach wie vielen Tagen ohne Antwort wird zum Nachfassen genudged.
+  READY_MIN_VOTES: 3,
+  FOLLOWUP_DAYS: 3,
+
+  // Fallback-Bewerberliste, falls applicants.json nicht geladen werden kann
+  // (z.B. beim lokalen Öffnen per Doppelklick). Auf dem echten Server wird
+  // applicants.json genutzt.
+  FALLBACK_APPLICANTS: [
+    { name: "Lina", status: "Beworben", studium_beruf: "FSJ", alter: 18 },
+    { name: "Julia", status: "Beworben" },
+    { name: "Jasmin", status: "Beworben" },
+    { name: "Amy", status: "Beworben" },
+    { name: "Raghavi", status: "Beworben" }
+  ]
+};
+// ======================================================================
+
+// Allgemeine Verfügbarkeit wird unter diesem festen Schlüssel gespeichert
+// (nicht mehr pro Bewerber:in).
+const GENERAL_KEY = "__ALLGEMEIN__";
+
+const STATUS_COLORS = {
+  "Zugesagt": "#16a34a", "Vor-Ort-Besuch geplant": "#d97706",
+  "Online-Kennenlernen geplant": "#6366f1", "Beworben": "#64748b", "Abgesagt": "#dc2626"
+};
+
+const MOCK = location.protocol === "file:" || !CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.indexOf("PASTE_") === 0;
+const $ = sel => document.querySelector(sel);
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+
+let ME = localStorage.getItem("wg_me") || "";
+let STATE = { votes: [], avail: [], meetings: [] };
+let APPLICANTS = [];
+let AI = { aiConfigured: false, aiModel: "" };   // KI-Status (Gemini) vom Backend
+let openCards = {};   // name -> bool (Detail aufgeklappt)
+
+// -------- Netzwerk / Mock --------
+function mockKey() { return "wg_mock_state"; }
+function mockLoad() {
+  try { const s = JSON.parse(localStorage.getItem(mockKey())) || {}; return { votes: s.votes || [], avail: s.avail || [], meetings: s.meetings || [], applicants: s.applicants || null }; }
+  catch (e) { return { votes: [], avail: [], meetings: [], applicants: null }; }
+}
+function mockSave(s) { localStorage.setItem(mockKey(), JSON.stringify(s)); }
+function mockUpsert(list, applicant, voter, fields) {
+  let row = list.find(r => r.applicant === applicant && r.voter === voter);
+  if (!row) { row = { applicant, voter }; list.push(row); }
+  Object.assign(row, fields, { updated: new Date().toISOString() });
+}
+function mockUpsertMeeting(list, applicant, fields) {
+  let row = list.find(r => r.applicant === applicant);
+  if (!row) { row = { applicant }; list.push(row); }
+  Object.assign(row, fields, { updated: new Date().toISOString() });
+}
+async function api(action, payload = {}) {
+  if (MOCK) {
+    const s = mockLoad();
+    if (action === "state") return { ok: true, votes: s.votes, avail: s.avail, meetings: s.meetings };
+    if (action === "applicants") return { ok: true, applicants: s.applicants || CONFIG.FALLBACK_APPLICANTS };
+    if (action === "config") return { ok: true, aiConfigured: false, aiModel: "(Testmodus – keine KI)" };
+    if (action === "set_config") return { ok: true, aiConfigured: false, aiModel: "(Testmodus)" };
+    if (action === "add_applicant") {
+      const list = s.applicants || CONFIG.FALLBACK_APPLICANTS.slice();
+      const app = { name: payload.name || "Neue:r Bewerber:in", status: "Beworben",
+        alter: payload.alter || "", studium_beruf: "", kennenlernen: "", einzug: "", eindruck: "",
+        situation: payload.text ? [payload.text.slice(0, 200)] : [], person: [], erwartung: [] };
+      list.push(app); s.applicants = list; mockSave(s);
+      return { ok: true, applicant: app, raw: "(Testmodus: kein KI-Text)" };
+    }
+    if (action === "vote") { mockUpsert(s.votes, payload.applicant, payload.voter, { rating: payload.rating, comment: payload.comment }); mockSave(s); return { ok: true }; }
+    if (action === "avail") { mockUpsert(s.avail, payload.applicant, payload.voter, { slotsJSON: payload.slots }); mockSave(s); return { ok: true }; }
+    if (action === "meeting") { const { applicant, ...rest } = payload; mockUpsertMeeting(s.meetings, applicant, rest); mockSave(s); return { ok: true }; }
+    return { ok: false, error: "unknown" };
+  }
+  const body = Object.assign({ action, code: CONFIG.ACCESS_CODE }, payload);
+  const res = await fetch(CONFIG.APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(body) });
+  return res.json();
+}
+async function refreshState() {
+  const r = await api("state");
+  if (r && r.ok) { STATE.votes = r.votes || []; STATE.avail = r.avail || []; STATE.meetings = r.meetings || []; }
+}
+async function loadApplicants() {
+  // Bewerber:innen kommen jetzt aus dem Backend (Quelle der Wahrheit).
+  try {
+    const r = await api("applicants");
+    if (r && r.ok && Array.isArray(r.applicants)) { APPLICANTS = r.applicants; return; }
+  } catch (e) { /* Backend nicht erreichbar -> Fallback */ }
+  try {
+    const res = await fetch("applicants.json", { cache: "no-store" });
+    if (res.ok) { APPLICANTS = await res.json(); return; }
+  } catch (e) { /* file:// oder fehlt -> Fallback */ }
+  APPLICANTS = CONFIG.FALLBACK_APPLICANTS;
+}
+async function loadAiConfig() {
+  try { const r = await api("config"); if (r && r.ok) AI = r; } catch (e) { /* egal */ }
+}
+
+// -------- Identity gate --------
+function initGate() {
+  const sel = $("#whoSel");
+  CONFIG.FLATMATES.forEach(n => { const o = el("option", null, n); o.value = n; sel.appendChild(o); });
+  if (ME) sel.value = ME;
+  $("#codeInp").value = MOCK ? CONFIG.ACCESS_CODE : (sessionStorage.getItem("wg_code") || "");
+  if (MOCK) {
+    $("#mockNotice").classList.remove("hidden");
+    $("#resetBtn").addEventListener("click", () => {
+      if (!confirm("Alle Testdaten (Votes, Verfügbarkeiten, Termine) und deine Auswahl löschen?")) return;
+      localStorage.removeItem("wg_mock_state");
+      localStorage.removeItem("wg_me");
+      sessionStorage.removeItem("wg_code");
+      location.reload();
+    });
+  }
+  $("#enterBtn").addEventListener("click", () => {
+    const code = $("#codeInp").value.trim();
+    if (!MOCK && code !== CONFIG.ACCESS_CODE) { $("#gateErr").textContent = "Falscher Zugangscode."; return; }
+    ME = sel.value;
+    localStorage.setItem("wg_me", ME);
+    sessionStorage.setItem("wg_code", code);
+    startApp();
+  });
+  $("#codeInp").addEventListener("keydown", e => { if (e.key === "Enter") $("#enterBtn").click(); });
+}
+function startApp() {
+  $("#gate").classList.add("hidden");
+  $("#app").classList.remove("hidden");
+  $("#whoLabel").textContent = ME;
+  boot();
+}
+document.addEventListener("click", e => {
+  if (e.target && e.target.id === "switchBtn") {
+    $("#app").classList.add("hidden"); $("#gate").classList.remove("hidden");
+  }
+});
+
+// -------- Tabs --------
+document.querySelectorAll(".tabs .btn[data-tab]").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".tabs .btn[data-tab]").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    const t = b.dataset.tab;
+    $("#tab-over").classList.toggle("hidden", t !== "over");
+    $("#tab-sched").classList.toggle("hidden", t !== "sched");
+    $("#tab-cal").classList.toggle("hidden", t !== "cal");
+    if (t === "sched") renderSched();
+    if (t === "cal") renderCalendar();
+  });
+});
+
+// -------- Bewerber:in hinzufügen / KI-Einstellungen (Buttons) --------
+$("#addApplBtn").addEventListener("click", openAddApplicant);
+$("#aiSettingsBtn").addEventListener("click", openAiSettings);
+
+// ======================================================================
+//  ÜBERSICHT + VOTEN
+// ======================================================================
+function votesFor(applicant) { return STATE.votes.filter(v => v.applicant === applicant); }
+function myVote(applicant) { return STATE.votes.find(v => v.applicant === applicant && v.voter === ME); }
+function avgOf(applicant) {
+  const nums = votesFor(applicant).map(v => Number(v.rating)).filter(n => !isNaN(n) && n > 0);
+  return nums.length ? { avg: nums.reduce((a, b) => a + b, 0) / nums.length, n: nums.length, sum: nums.reduce((a, b) => a + b, 0) } : null;
+}
+
+function factsLine(app) {
+  const parts = [];
+  if (app.status) parts.push(app.status);
+  if (app.alter != null && app.alter !== "") parts.push(app.alter + " J.");
+  if (app.studium_beruf) parts.push(app.studium_beruf);
+  if (app.kennenlernen) parts.push(app.kennenlernen);
+  if (app.einzug) parts.push("Einzug: " + app.einzug);
+  return parts.join(" · ");
+}
+
+function bulletList(items) {
+  if (!items || !items.length) return el("p", "muted", "–");
+  const ul = el("ul");
+  items.forEach(i => ul.appendChild(el("li", null, i)));
+  return ul;
+}
+
+function renderOverview() {
+  const host = $("#applList"); host.innerHTML = "";
+  if (!APPLICANTS.length) { host.appendChild(el("p", "muted", "Keine Bewerber:innen gefunden.")); return; }
+
+  APPLICANTS.forEach(app => {
+    const name = app.name;
+    const mine = myVote(name) || {};
+    const card = el("div", "appl" + (openCards[name] ? " open" : ""));
+    const head = el("div", "appl-head");
+
+    // links: Titel (klickbar zum Aufklappen) + Fakten + Aggregat + Kommentare
+    const left = el("div");
+    const title = el("div", "appl-title");
+    title.appendChild(el("span", "chev", "›"));
+    title.appendChild(el("span", "appl-name", name));
+    if (app.status) {
+      const badge = el("span", "badge", app.status);
+      badge.style.setProperty("--badge-color", STATUS_COLORS[app.status] || "#64748b");
+      title.appendChild(badge);
+    }
+    title.addEventListener("click", () => {
+      openCards[name] = !openCards[name];
+      card.classList.toggle("open", openCards[name]);
+      detail.classList.toggle("hidden", !openCards[name]);
+    });
+    left.appendChild(title);
+
+    const facts = factsLine(app);
+    if (facts) left.appendChild(el("p", "facts", facts));
+
+    const a = avgOf(name);
+    const agg = el("div", "agg");
+    agg.innerHTML = a ? `<span class="avg">Ø ${a.avg.toFixed(1)}</span> · ${a.n} Stimme(n)` : `<span class="muted">noch keine Bewertung</span>`;
+    left.appendChild(agg);
+
+    const chips = el("div", "voter-chips");
+    votesFor(name).forEach(v => {
+      if (Number(v.rating) > 0) {
+        const c = el("span", "chip");
+        c.innerHTML = `${escapeHtml(v.voter)}: <span class="g">${"★".repeat(Number(v.rating))}</span>`;
+        chips.appendChild(c);
+      }
+    });
+    left.appendChild(chips);
+
+    const comments = votesFor(name).filter(v => (v.comment || "").trim());
+    if (comments.length) {
+      const cbox = el("div", "comments");
+      comments.forEach(v => {
+        const line = el("div", "comment-line");
+        line.innerHTML = `<b>${escapeHtml(v.voter)}:</b> ${escapeHtml(v.comment)}`;
+        cbox.appendChild(line);
+      });
+      left.appendChild(cbox);
+    }
+    head.appendChild(left);
+
+    // rechts: meine Sterne
+    const right = el("div", "rate-box");
+    const savedEl = el("span", "saved", "gespeichert ✓");
+    const starsEl = el("div", "stars");
+    for (let i = 1; i <= 5; i++) {
+      const s = el("span", "star", "★"); s.dataset.val = i;
+      if (Number(mine.rating) >= i) s.classList.add("on");
+      s.addEventListener("click", async () => {
+        const cur = Number((myVote(name) || {}).rating) || 0;
+        const val = (cur === i) ? 0 : i;
+        await saveVote(name, val, (myVote(name) || {}).comment || "");
+        flash(savedEl); renderOverview();
+      });
+      starsEl.appendChild(s);
+    }
+    right.appendChild(starsEl);
+    right.appendChild(el("div", null, "")).appendChild(savedEl);
+    head.appendChild(right);
+
+    // mein Kommentar
+    const cWrap = el("div", "my-comment");
+    const ta = el("textarea"); ta.placeholder = "Deine Notiz / dein Kommentar (nur für die WG sichtbar)";
+    ta.value = mine.comment || "";
+    ta.addEventListener("blur", async () => {
+      if ((ta.value || "") === (mine.comment || "")) return;
+      await saveVote(name, Number((myVote(name) || {}).rating) || 0, ta.value);
+      flash(savedEl); renderOverview();
+    });
+    cWrap.appendChild(ta);
+    head.appendChild(cWrap);
+
+    // Details (Situation / Person / Erwartung)
+    const detail = el("div", "detail-grid" + (openCards[name] ? "" : " hidden"));
+    [["Situation", app.situation], ["Person", app.person], ["Erwartung", app.erwartung]].forEach(([h, items]) => {
+      const sec = el("section");
+      sec.appendChild(el("h3", null, h));
+      sec.appendChild(bulletList(items));
+      detail.appendChild(sec);
+    });
+    head.appendChild(detail);
+
+    card.appendChild(head);
+    host.appendChild(card);
+  });
+}
+
+// -------- Bewerber:in hinzufügen (KI) + KI-Einstellungen --------
+function field(labelText, inputEl) {
+  const wrap = el("div", "form-field");
+  const lab = el("label", null, labelText);
+  wrap.appendChild(lab); wrap.appendChild(inputEl);
+  return wrap;
+}
+function updateAiBtn() {
+  const b = $("#aiSettingsBtn");
+  if (b) b.textContent = "⚙️ KI-Einstellungen " + (AI.aiConfigured ? "●" : "○");
+}
+function openAddApplicant() {
+  const box = el("div");
+  box.appendChild(el("h3", null, "Bewerber:in hinzufügen"));
+  const note = el("p", "form-note",
+    AI.aiConfigured
+      ? "Name & Alter eintragen und den Bewerbungstext (z. B. von WG-Gesucht) einfügen. Die KI erstellt daraus automatisch einen strukturierten Eintrag."
+      : "⚠️ Es ist noch kein KI-Schlüssel hinterlegt. Bitte zuerst unter „KI-Einstellungen“ einen Gemini-API-Key eintragen.");
+  box.appendChild(note);
+
+  const nameInp = el("input"); nameInp.type = "text"; nameInp.placeholder = "z. B. Jasmin";
+  const alterInp = el("input"); alterInp.type = "text"; alterInp.inputMode = "numeric"; alterInp.placeholder = "z. B. 19";
+  const textArea = el("textarea"); textArea.placeholder = "Kompletten Bewerbungstext hier einfügen …";
+
+  box.appendChild(field("Name", nameInp));
+  box.appendChild(field("Alter", alterInp));
+  box.appendChild(field("Bewerbungstext", textArea));
+  const err = el("p", "form-err");
+  box.appendChild(err);
+
+  const actions = el("div", "modal-actions");
+  const submit = el("button", "btn", "✨ Mit KI anlegen");
+  const cancel = el("button", "btn", "Abbrechen");
+  actions.appendChild(submit); actions.appendChild(cancel);
+  box.appendChild(actions);
+
+  cancel.addEventListener("click", closeModal);
+  submit.addEventListener("click", async () => {
+    err.textContent = "";
+    const text = textArea.value.trim();
+    if (!text) { err.textContent = "Bitte den Bewerbungstext einfügen."; return; }
+    submit.disabled = true; cancel.disabled = true;
+    const label = submit.textContent; submit.textContent = "KI arbeitet …";
+    try {
+      const r = await api("add_applicant", { name: nameInp.value.trim(), alter: alterInp.value.trim(), text });
+      if (r && r.ok) {
+        await loadApplicants();
+        renderOverview();
+        closeModal();
+      } else {
+        err.textContent = (r && r.error) || "Unbekannter Fehler.";
+      }
+    } catch (e) {
+      err.textContent = "Netzwerkfehler: " + e;
+    } finally {
+      submit.disabled = false; cancel.disabled = false; submit.textContent = label;
+    }
+  });
+  openModal(box);
+  nameInp.focus();
+}
+function openAiSettings() {
+  const box = el("div");
+  box.appendChild(el("h3", null, "KI-Einstellungen (Google Gemini)"));
+  const status = el("p", "form-note");
+  status.innerHTML = AI.aiConfigured
+    ? `Status: <span class="ai-badge ai-on">Key hinterlegt</span> · Modell: <code>${escapeHtml(AI.aiModel || "")}</code>`
+    : `Status: <span class="ai-badge ai-off">kein Key</span>`;
+  box.appendChild(status);
+  const help = el("p", "form-note");
+  help.innerHTML = 'Kostenlosen API-Key erstellen unter <b>aistudio.google.com/apikey</b>. Der Key wird nur auf dem Server gespeichert, nicht im Browser.';
+  box.appendChild(help);
+
+  const keyInp = el("input"); keyInp.type = "password"; keyInp.placeholder = AI.aiConfigured ? "(unverändert – zum Ändern neuen Key eingeben)" : "Gemini-API-Key einfügen";
+  const modelInp = el("input"); modelInp.type = "text"; modelInp.value = AI.aiModel && AI.aiModel.indexOf("(") !== 0 ? AI.aiModel : "gemini-flash-latest";
+  box.appendChild(field("API-Key", keyInp));
+  box.appendChild(field("Modell (optional)", modelInp));
+  const err = el("p", "form-err");
+  box.appendChild(err);
+
+  const actions = el("div", "modal-actions");
+  const save = el("button", "btn", "Speichern");
+  const cancel = el("button", "btn", "Abbrechen");
+  actions.appendChild(save); actions.appendChild(cancel);
+  box.appendChild(actions);
+
+  cancel.addEventListener("click", closeModal);
+  save.addEventListener("click", async () => {
+    err.textContent = "";
+    const payload = { gemini_model: modelInp.value.trim() };
+    // Nur senden, wenn etwas eingegeben wurde (leer = unverändert lassen).
+    if (keyInp.value.trim()) payload.gemini_api_key = keyInp.value.trim();
+    save.disabled = true; cancel.disabled = true;
+    try {
+      const r = await api("set_config", payload);
+      if (r && r.ok) { AI = r; updateAiBtn(); closeModal(); }
+      else { err.textContent = (r && r.error) || "Konnte nicht speichern."; }
+    } catch (e) {
+      err.textContent = "Netzwerkfehler: " + e;
+    } finally { save.disabled = false; cancel.disabled = false; }
+  });
+  openModal(box);
+}
+
+async function saveVote(applicant, rating, comment) {
+  let row = STATE.votes.find(v => v.applicant === applicant && v.voter === ME);
+  if (!row) { row = { applicant, voter: ME }; STATE.votes.push(row); }
+  row.rating = rating; row.comment = comment;
+  await api("vote", { applicant, voter: ME, rating: rating || "", comment });
+}
+
+// ======================================================================
+//  TERMINE  (allgemeine Verfügbarkeit, When2meet-Style)
+// ======================================================================
+let DAYS = [], TIMES = [], mode = "mine";
+let painting = false, paintTo = true, mySelSet = new Set(), saveTimer = null;
+
+function buildGrid() {
+  DAYS = []; TIMES = [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const dfmt = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+  for (let d = 0; d < CONFIG.DAYS_AHEAD; d++) {
+    const dt = new Date(today); dt.setDate(today.getDate() + d);
+    DAYS.push({ iso: dt.toISOString().slice(0, 10), label: dfmt.format(dt) });
+  }
+  for (let m = CONFIG.START_HOUR * 60; m < CONFIG.END_HOUR * 60; m += CONFIG.SLOT_MIN) {
+    const hh = String(Math.floor(m / 60)).padStart(2, "0");
+    const mm = String(m % 60).padStart(2, "0");
+    TIMES.push({ label: `${hh}:${mm}` });
+  }
+}
+function slotsOf(voter) {
+  const row = STATE.avail.find(a => a.applicant === GENERAL_KEY && a.voter === voter);
+  if (!row) return new Set();
+  try { return new Set(JSON.parse(row.slotsJSON || "[]")); } catch (e) { return new Set(); }
+}
+
+function renderSched() {
+  if (!buildGrid._done) { buildGrid(); buildGrid._done = true; }
+  renderNextSteps();
+  if (mode === "mine") renderMineGrid(); else renderAllGrid();
+}
+$("#viewMine").addEventListener("click", () => {
+  mode = "mine"; $("#viewMine").classList.add("active"); $("#viewAll").classList.remove("active");
+  $("#schedHint").classList.remove("hidden"); $("#bestBox").classList.add("hidden"); $("#rankBox").classList.add("hidden");
+  renderMineGrid();
+});
+$("#viewAll").addEventListener("click", () => {
+  mode = "all"; $("#viewAll").classList.add("active"); $("#viewMine").classList.remove("active");
+  $("#schedHint").classList.add("hidden"); renderAllGrid();
+});
+
+function gridSkeleton() {
+  const table = el("table", "grid");
+  const thead = el("thead"), htr = el("tr");
+  htr.appendChild(el("th", "corner", "Zeit"));
+  DAYS.forEach(day => htr.appendChild(el("th", null, day.label)));
+  thead.appendChild(htr); table.appendChild(thead);
+  const tbody = el("tbody");
+  TIMES.forEach(t => {
+    const tr = el("tr");
+    tr.appendChild(el("td", "time", t.label));
+    DAYS.forEach(day => { const td = el("td", "cell"); td.dataset.key = `${day.iso}T${t.label}`; tr.appendChild(td); });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  return table;
+}
+
+function renderMineGrid() {
+  mySelSet = new Set(slotsOf(ME));
+  const host = $("#gridHost"); host.innerHTML = "";
+  const table = gridSkeleton(); host.appendChild(table);
+  table.querySelectorAll("td.cell").forEach(td => {
+    if (mySelSet.has(td.dataset.key)) td.classList.add("mine");
+    td.addEventListener("pointerdown", ev => { ev.preventDefault(); painting = true; paintTo = !td.classList.contains("mine"); applyPaint(td); });
+    td.addEventListener("pointerenter", () => { if (painting) applyPaint(td); });
+  });
+  renderLegend(false);
+}
+function applyPaint(td) {
+  const key = td.dataset.key;
+  if (paintTo) { td.classList.add("mine"); mySelSet.add(key); }
+  else { td.classList.remove("mine"); mySelSet.delete(key); }
+  scheduleSave();
+}
+document.addEventListener("pointerup", () => { painting = false; });
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const arr = Array.from(mySelSet);
+    let row = STATE.avail.find(a => a.applicant === GENERAL_KEY && a.voter === ME);
+    if (!row) { row = { applicant: GENERAL_KEY, voter: ME }; STATE.avail.push(row); }
+    row.slotsJSON = JSON.stringify(arr);
+    await api("avail", { applicant: GENERAL_KEY, voter: ME, slots: JSON.stringify(arr) });
+    flash($("#schedSaved"));
+  }, 500);
+}
+
+function countAvail() {
+  const counts = {};
+  CONFIG.FLATMATES.forEach(fm => slotsOf(fm).forEach(k => {
+    if (!counts[k]) counts[k] = { count: 0, who: [] };
+    counts[k].count++; counts[k].who.push(fm);
+  }));
+  return counts;
+}
+function heatColor(count, max) {
+  if (count === 0) return "transparent";
+  const light = 88 - Math.round((count / max) * 45);
+  return `hsl(140 55% ${light}%)`;
+}
+function renderAllGrid() {
+  const host = $("#gridHost"); host.innerHTML = "";
+  const table = gridSkeleton(); host.appendChild(table);
+  const counts = countAvail(), max = CONFIG.FLATMATES.length;
+  table.querySelectorAll("td.cell").forEach(td => {
+    const c = counts[td.dataset.key];
+    if (c) { td.style.background = heatColor(c.count, max); td.style.color = "#0b0d12"; td.textContent = c.count; td.title = `${c.count}/${max} frei: ${c.who.join(", ")}`; }
+  });
+  renderLegend(true);
+  renderBest(counts, max);
+  renderRanking();
+  renderNextSteps();
+}
+function renderBest(counts, max) {
+  const box = $("#bestBox"); box.classList.remove("hidden"); box.innerHTML = "";
+  const entries = Object.keys(counts).map(k => ({ key: k, count: counts[k].count, who: counts[k].who }));
+  box.appendChild(el("h3", null, "Beste Termine (allgemeine Verfügbarkeit)"));
+  if (!entries.length) { box.appendChild(el("p", "muted", "Noch keine Verfügbarkeiten eingetragen.")); return; }
+  entries.sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
+  const ol = el("ol");
+  entries.slice(0, 8).forEach(e => {
+    const li = el("li");
+    li.innerHTML = `<span class="cnt">${e.count}/${max}</span> · ${fmtSlot(e.key)} <span class="muted">(${escapeHtml(e.who.join(", "))})</span>`;
+    ol.appendChild(li);
+  });
+  box.appendChild(ol);
+  box.appendChild(el("p", "muted", "Die obersten Termine (idealerweise mit allen 5) der/dem Bewerber:in anbieten."));
+}
+function fmtSlot(key) {
+  const [iso, time] = key.split("T");
+  const dt = new Date(iso + "T00:00:00");
+  const d = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" }).format(dt);
+  return `${d}, ${time}`;
+}
+function renderLegend(all) {
+  const lg = $("#legend"); lg.innerHTML = "";
+  if (!all) { const s = el("span"); s.innerHTML = `<span class="swatch" style="background:var(--accent)"></span> deine freie Zeit`; lg.appendChild(s); return; }
+  const max = CONFIG.FLATMATES.length;
+  lg.appendChild(el("span", "muted", "frei:"));
+  for (let c = 1; c <= max; c++) { const s = el("span"); s.innerHTML = `<span class="swatch" style="background:${heatColor(c, max)}"></span> ${c}`; lg.appendChild(s); }
+}
+
+// ======================================================================
+//  MEETING-WORKFLOW  (vorschlagen -> Antwort -> bestätigen)
+// ======================================================================
+// Zustände: none -> proposed -> confirmed -> met  (umplanen: confirmed -> confirmed mit neuem Termin)
+// ("responded" gibt es als eigener Schritt nicht mehr; Altdaten werden wie "proposed" behandelt.)
+function meetingOf(name) { return STATE.meetings.find(m => m.applicant === name) || { applicant: name, state: "none" }; }
+function parseSlots(v) { if (!v) return []; if (Array.isArray(v)) return v; try { return JSON.parse(v) || []; } catch (e) { return []; } }
+function daysSince(iso) { if (!iso) return null; return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
+function statusClosed(app) { return app && (app.status === "Abgesagt" || app.status === "Zugesagt"); }
+
+async function saveMeeting(name, patch) {
+  let row = STATE.meetings.find(m => m.applicant === name);
+  if (!row) { row = { applicant: name, state: "none" }; STATE.meetings.push(row); }
+  Object.assign(row, patch);
+  await api("meeting", {
+    applicant: name, state: row.state,
+    proposedSlots: row.proposedSlots || "[]", proposedAt: row.proposedAt || "",
+    proposedBy: row.proposedBy || "", owner: row.owner || "",
+    responseSlots: row.responseSlots || "[]", confirmedSlot: row.confirmedSlot || ""
+  });
+}
+
+// Kategorisiert eine:n Bewerber:in für Rangliste + Banner.
+function workState(app) {
+  const m = meetingOf(app.name);
+  const a = avgOf(app.name);
+  if (statusClosed(app)) return { kind: "closed", m };
+  if (m.state === "confirmed" || m.state === "met") return { kind: m.state, m };
+  if (m.state === "proposed" || m.state === "responded") {
+    const age = daysSince(m.proposedAt);
+    return { kind: (age != null && age >= CONFIG.FOLLOWUP_DAYS) ? "stale" : "proposed", m, age };
+  }
+  // noch kein Termin
+  if (a && a.n >= CONFIG.READY_MIN_VOTES) return { kind: "ready", m };
+  return { kind: "unrated", m, need: CONFIG.READY_MIN_VOTES - (a ? a.n : 0) };
+}
+
+// ---- Ranking der Bewerber:innen nach Bewertung + Aktionen ----
+function renderRanking() {
+  const box = $("#rankBox"); box.classList.remove("hidden"); box.innerHTML = "";
+  box.appendChild(el("h3", null, "Bewerber:innen-Ranking & nächste Aktion"));
+  const rows = APPLICANTS.map(app => {
+    const a = avgOf(app.name);
+    return { app, name: app.name, avg: a ? a.avg : null, n: a ? a.n : 0, sum: a ? a.sum : 0,
+             votes: votesFor(app.name).filter(v => Number(v.rating) > 0) };
+  });
+  rows.sort((x, y) => {
+    if ((y.avg == null) - (x.avg == null)) return (x.avg == null) - (y.avg == null);
+    if (y.avg !== x.avg) return (y.avg || 0) - (x.avg || 0);
+    if (y.n !== x.n) return y.n - x.n;
+    return x.name.localeCompare(y.name, "de");
+  });
+  rows.forEach((r, i) => {
+    const ws = workState(r.app);
+    const item = el("div", "rank-item" + (ws.kind === "closed" ? " closed" : ""));
+    item.appendChild(el("div", "rank-pos", (i + 1) + "."));
+    item.appendChild(el("div", "rank-name", r.name));
+    const score = el("div", "rank-score");
+    score.innerHTML = r.avg != null
+      ? `${starBar(r.avg)} <span class="muted">(${r.n})</span>`
+      : `<span class="muted">noch keine Bewertung</span>`;
+    item.appendChild(score);
+
+    const chips = el("div", "rank-chips voter-chips");
+    r.votes.forEach(v => { const c = el("span", "chip"); c.innerHTML = `${escapeHtml(v.voter)}: <span class="g">${"★".repeat(Number(v.rating))}</span>`; chips.appendChild(c); });
+    item.appendChild(chips);
+
+    item.appendChild(actionRow(r.app, ws));
+    box.appendChild(item);
+  });
+}
+
+function actionRow(app, ws) {
+  const row = el("div", "rank-action");
+  const m = ws.m;
+  const badge = (cls, txt) => { const b = el("span", "mstate " + cls, txt); row.appendChild(b); };
+  const button = (cls, txt, fn) => { const b = el("button", "act-btn " + cls, txt); b.addEventListener("click", fn); row.appendChild(b); };
+
+  if (ws.kind === "closed") { badge("", app.status); return row; }
+
+  if (ws.kind === "ready") {
+    badge("ready", "🔥 bereit zum Einladen");
+    button("", "📅 Termine vorschlagen", () => openPropose(app));
+  } else if (ws.kind === "unrated") {
+    badge("", `⏳ wartet auf Votes (${ws.need > 0 ? "noch " + ws.need : "mind. " + CONFIG.READY_MIN_VOTES})`);
+    button("ghost mini", "trotzdem einladen", () => openPropose(app));
+  } else if (ws.kind === "proposed" || ws.kind === "stale") {
+    const age = ws.age;
+    badge(ws.kind === "stale" ? "stale" : "proposed",
+      "📨 vorgeschlagen" + (age != null ? ` vor ${age} Tag${age === 1 ? "" : "en"}` : "") + (m.owner ? ` · ${m.owner}` : ""));
+    button("", "✅ Termin eintragen", () => openSchedule(app));
+    if (ws.kind === "stale") button("ghost mini", "Nachricht erneut kopieren", () => openPropose(app, true));
+  } else if (ws.kind === "confirmed") {
+    badge("confirmed", "✔️ " + (m.confirmedSlot ? fmtSlot(m.confirmedSlot) : "bestätigt"));
+    button("ghost mini", "🔄 umplanen", () => openSchedule(app));
+    button("ghost mini", "kennengelernt ✓", async () => { await saveMeeting(app.name, { state: "met" }); renderAllGrid(); });
+  } else if (ws.kind === "met") {
+    badge("confirmed", "✅ kennengelernt" + (m.confirmedSlot ? " (" + fmtSlot(m.confirmedSlot) + ")" : ""));
+    button("ghost mini", "🔄 umplanen", () => openSchedule(app));
+  }
+  return row;
+}
+
+// ---- Nächste Schritte (Banner) ----
+function renderNextSteps() {
+  const host = $("#steps"); if (!host) return; host.innerHTML = "";
+  let invite = 0, follow = 0, waiting = 0, done = 0;
+  APPLICANTS.forEach(app => {
+    const k = workState(app).kind;
+    if (k === "ready") invite++;
+    else if (k === "stale") follow++;
+    else if (k === "proposed") waiting++;
+    else if (k === "confirmed" || k === "met") done++;
+  });
+  const chip = (cls, n, label, action) => {
+    const c = el("button", "step " + cls);
+    c.innerHTML = `<span class="n">${n}</span> ${label}`;
+    if (action) c.addEventListener("click", action); else c.classList.add("info");
+    host.appendChild(c);
+  };
+  const toRank = () => { const b = $("#rankBox"); if (b) b.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  let any = false;
+  if (invite) { chip("hot", invite, "einladen", toRank); any = true; }
+  if (follow) { chip("warn", follow, "nachfassen", toRank); any = true; }
+  if (waiting) chip("info", waiting, "warten auf Antwort → Termin eintragen");
+  if (done) chip("done-note", done, "Termin steht");
+  if (!any && !waiting) host.appendChild(el("span", "muted", done ? "Alles Wichtige erledigt – Termine stehen. ✅" : "Noch keine offenen Schritte. Erst voten & Verfügbarkeiten eintragen."));
+}
+
+// ======================================================================
+//  MODAL + Flows
+// ======================================================================
+function openModal(node) { $("#modalBody").innerHTML = ""; $("#modalBody").appendChild(node); $("#modal").classList.remove("hidden"); }
+function closeModal() { $("#modal").classList.add("hidden"); }
+$("#modalX").addEventListener("click", closeModal);
+$("#modal").addEventListener("click", e => { if (e.target && e.target.id === "modal") closeModal(); });
+
+function topSlots(limit) {
+  const counts = countAvail();
+  return Object.keys(counts).map(k => ({ key: k, count: counts[k].count }))
+    .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key)).slice(0, limit);
+}
+function proposeMessage(name, slots) {
+  const lines = slots.map(s => "• " + fmtSlot(s)).join("\n");
+  return `Hi ${name}! Schön, dass du dich bei uns beworben hast. 😊\nFür ein Kennenlernen würde bei uns passen:\n${lines}\nPasst dir davon etwas – oder hast du einen anderen Vorschlag?\nLiebe Grüße, deine HuBü-WG`;
+}
+
+// Slots, die bei anderen Bewerber:innen noch "in der Schwebe" oder fest sind -> blockieren.
+// Sobald ein Termin bestätigt ist, werden die nicht genutzten Vorschläge wieder frei.
+function takenByOthers(name) {
+  const set = new Set();
+  STATE.meetings.forEach(m => {
+    if (m.applicant === name) return;
+    if (m.state === "confirmed" || m.state === "met") {
+      // nur der fixe Termin bleibt belegt; die übrigen Vorschläge sind wieder frei
+      if (m.confirmedSlot) set.add(m.confirmedSlot);
+    } else if (m.state === "responded") {
+      // die noch möglichen (zugesagten) Termine bleiben reserviert, Absagen werden frei
+      const r = parseSlots(m.responseSlots);
+      (r.length ? r : parseSlots(m.proposedSlots)).forEach(k => set.add(k));
+    } else if (m.state === "proposed") {
+      // offener Vorschlag: alle vorgeschlagenen Termine sind vorgemerkt
+      parseSlots(m.proposedSlots).forEach(k => set.add(k));
+    }
+    // state "none" -> nichts blockieren
+  });
+  return set;
+}
+
+function openPropose(app, reopen) {
+  const m = meetingOf(app.name);
+  const box = el("div");
+  box.appendChild(el("h3", null, "Termine vorschlagen – " + app.name));
+
+  // Verantwortliche:r ganz oben
+  const ownerRow = el("div", "owner-row");
+  ownerRow.appendChild(el("span", null, "Wer kümmert sich? "));
+  const ownerSel = el("select");
+  ["", ...CONFIG.FLATMATES].forEach(n => { const o = el("option", null, n || "– niemand –"); o.value = n; ownerSel.appendChild(o); });
+  ownerSel.value = m.owner || ME;
+  ownerRow.appendChild(ownerSel);
+  box.appendChild(ownerRow);
+
+  const taken = takenByOthers(app.name);
+  const already = parseSlots(m.proposedSlots);
+  const suggested = topSlots(60).filter(s => !taken.has(s.key)).slice(0, 6);
+  if (!suggested.length && !already.length) {
+    box.appendChild(el("p", "hint-inline", "Es gibt noch keine (freien, nicht vergebenen) gemeinsamen Zeiten. Erst sollten alle ihre Verfügbarkeit eintragen."));
+  } else {
+    box.appendChild(el("p", "hint-inline", "Wähle die Termine, die ihr vorschlagen wollt (Top-Überschneidungen sind vorausgewählt):"));
+  }
+  if (taken.size) box.appendChild(el("p", "hint-inline", "Termine, die schon anderen Bewerber:innen vorgeschlagen wurden, sind ausgeblendet."));
+
+  const preset = new Set(already.length ? already : suggested.slice(0, 3).map(s => s.key));
+  const opts = [];
+  suggested.forEach(s => {
+    const lab = el("label", "slot-opt");
+    const cb = el("input"); cb.type = "checkbox"; cb.value = s.key; cb.checked = preset.has(s.key);
+    lab.appendChild(cb);
+    lab.appendChild(el("span", null, fmtSlot(s.key)));
+    lab.appendChild(el("span", "cnt", `${s.count}/${CONFIG.FLATMATES.length} frei`));
+    box.appendChild(lab); opts.push(cb);
+  });
+  // bereits an DIESE Person vorgeschlagene Slots, die nicht in den Top-6 sind
+  already.forEach(k => { if (!suggested.find(s => s.key === k)) {
+    const lab = el("label", "slot-opt");
+    const cb = el("input"); cb.type = "checkbox"; cb.value = k; cb.checked = true; lab.appendChild(cb);
+    lab.appendChild(el("span", null, fmtSlot(k))); box.appendChild(lab); opts.push(cb);
+  }});
+
+  const msg = el("textarea", "msg-area");
+  const refreshMsg = () => { msg.value = proposeMessage(app.name, opts.filter(o => o.checked).map(o => o.value)); };
+  opts.forEach(o => o.addEventListener("change", refreshMsg));
+  refreshMsg();
+  box.appendChild(el("p", "hint-inline", "Nachricht (zum Kopieren & Verschicken):"));
+  box.appendChild(msg);
+
+  const actions = el("div", "modal-actions");
+  const copyBtn = el("button", "act-btn ghost", "📋 Nachricht kopieren");
+  copyBtn.addEventListener("click", () => { copyText(msg.value); copyBtn.textContent = "kopiert ✓"; setTimeout(() => copyBtn.textContent = "📋 Nachricht kopieren", 1500); });
+  actions.appendChild(copyBtn);
+  const saveBtn = el("button", "act-btn", "Als vorgeschlagen markieren");
+  saveBtn.addEventListener("click", async () => {
+    const chosen = opts.filter(o => o.checked).map(o => o.value);
+    if (!chosen.length) { alert("Bitte mindestens einen Termin auswählen."); return; }
+    await saveMeeting(app.name, { state: "proposed", proposedSlots: JSON.stringify(chosen),
+      proposedAt: new Date().toISOString(), proposedBy: ME, owner: ownerSel.value, responseSlots: "[]", confirmedSlot: "" });
+    closeModal(); renderAllGrid();
+  });
+  actions.appendChild(saveBtn);
+  box.appendChild(actions);
+  openModal(box);
+}
+
+// Termin direkt eintragen (aus "vorgeschlagen") oder ändern/umplanen (aus "bestätigt").
+// Zur Auswahl stehen die dieser Person vorgeschlagenen Termine, der aktuelle Termin
+// sowie frische freie Überschneidungen (nicht an andere vergeben) – so lässt sich auch
+// kurzfristig auf einen ganz neuen Termin umplanen.
+function openSchedule(app) {
+  const m = meetingOf(app.name);
+  const isResched = (m.state === "confirmed" || m.state === "met");
+  const box = el("div");
+  box.appendChild(el("h3", null, (isResched ? "Termin ändern – " : "Termin eintragen – ") + app.name));
+  box.appendChild(el("p", "hint-inline", isResched
+    ? "Neuen Termin wählen – der bisherige wird dadurch wieder frei:"
+    : "Welcher Termin wurde vereinbart?"));
+
+  const counts = countAvail();
+  const taken = takenByOthers(app.name);
+  const keys = [], seen = new Set();
+  const add = k => { if (k && !seen.has(k)) { seen.add(k); keys.push(k); } };
+  parseSlots(m.proposedSlots).forEach(add);
+  if (m.confirmedSlot) add(m.confirmedSlot);
+  topSlots(60).filter(s => !taken.has(s.key)).forEach(s => add(s.key));
+  keys.sort((a, b) => a.localeCompare(b));
+
+  const opts = [];
+  keys.forEach((k, i) => {
+    const lab = el("label", "slot-opt");
+    const rb = el("input"); rb.type = "radio"; rb.name = "schedSlot"; rb.value = k;
+    if (k === m.confirmedSlot || (!m.confirmedSlot && i === 0)) rb.checked = true;
+    lab.appendChild(rb);
+    lab.appendChild(el("span", null, fmtSlot(k)));
+    const c = counts[k];
+    if (c) lab.appendChild(el("span", "cnt", `${c.count}/${CONFIG.FLATMATES.length} frei`));
+    box.appendChild(lab); opts.push(rb);
+  });
+  if (!keys.length) box.appendChild(el("p", "hint-inline", "Keine Termine verfügbar – erst Verfügbarkeiten eintragen oder neue Termine vorschlagen."));
+
+  const actions = el("div", "modal-actions");
+  const saveBtn = el("button", "act-btn", isResched ? "✔️ Termin ändern" : "✔️ Als Termin eintragen");
+  saveBtn.addEventListener("click", async () => {
+    const chosen = opts.find(o => o.checked);
+    if (!chosen) { alert("Bitte einen Termin wählen."); return; }
+    await saveMeeting(app.name, { state: "confirmed", confirmedSlot: chosen.value });
+    closeModal(); renderAllGrid();
+  });
+  actions.appendChild(saveBtn);
+  const proposeBtn = el("button", "act-btn ghost", "Andere Termine vorschlagen");
+  proposeBtn.addEventListener("click", () => { closeModal(); openPropose(app); });
+  actions.appendChild(proposeBtn);
+  box.appendChild(actions);
+  box.appendChild(el("p", "hint-inline", "Der eingetragene Termin erscheint im Tab „📆 Castings“."));
+  openModal(box);
+}
+
+function pad(n) { return String(n).padStart(2, "0"); }
+
+// ======================================================================
+//  CASTINGS-KALENDER (Monatsansicht der bestätigten Termine)
+// ======================================================================
+let calCursor = null;  // erster Tag des angezeigten Monats
+
+function confirmedMeetings() {
+  return STATE.meetings
+    .filter(m => (m.state === "confirmed" || m.state === "met") && m.confirmedSlot)
+    .map(m => { const [iso, time] = String(m.confirmedSlot).split("T"); return { name: m.applicant, iso, time, state: m.state }; });
+}
+
+function renderCalendar() {
+  const host = $("#calCard"); if (!host) return; host.innerHTML = "";
+  if (!calCursor) { const t = new Date(); calCursor = new Date(t.getFullYear(), t.getMonth(), 1); }
+
+  const evs = confirmedMeetings();
+  const byDay = {};
+  evs.forEach(e => { (byDay[e.iso] = byDay[e.iso] || []).push(e); });
+  Object.values(byDay).forEach(list => list.sort((a, b) => a.time.localeCompare(b.time)));
+
+  // Kopf mit Navigation
+  const head = el("div", "cal-head");
+  const prev = el("button", "btn", "‹"); prev.style.padding = ".2rem .7rem";
+  const next = el("button", "btn", "›"); next.style.padding = ".2rem .7rem";
+  const title = el("div", "cal-title", new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric" }).format(calCursor));
+  prev.addEventListener("click", () => { calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() - 1, 1); renderCalendar(); });
+  next.addEventListener("click", () => { calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 1); renderCalendar(); });
+  head.appendChild(prev); head.appendChild(title); head.appendChild(next);
+  host.appendChild(head);
+
+  if (!evs.length) host.appendChild(el("p", "hint-inline", "Noch keine bestätigten Termine. Bestätige Termine im Tab „📅 Termine“."));
+
+  // Wochentagsköpfe (Mo-first)
+  const grid = el("div", "cal-grid");
+  ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].forEach(d => grid.appendChild(el("div", "cal-dow", d)));
+
+  const year = calCursor.getFullYear(), month = calCursor.getMonth();
+  const first = new Date(year, month, 1);
+  let offset = (first.getDay() + 6) % 7;  // Mo=0 ... So=6
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  for (let i = 0; i < offset; i++) grid.appendChild(el("div", "cal-cell empty"));
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${year}-${pad(month + 1)}-${pad(d)}`;
+    const cell = el("div", "cal-cell" + (iso === todayIso ? " today" : ""));
+    cell.appendChild(el("div", "cal-day", String(d)));
+    (byDay[iso] || []).forEach(e => {
+      const ev = el("div", "cal-ev" + (e.state === "met" ? " met" : ""));
+      ev.textContent = `${e.time} ${e.name}`;
+      ev.title = `${e.time} – ${e.name}` + (e.state === "met" ? " (kennengelernt)" : "");
+      cell.appendChild(ev);
+    });
+    grid.appendChild(cell);
+  }
+  host.appendChild(grid);
+
+  // Liste kommender Termine
+  const upcoming = evs.filter(e => e.iso >= todayIso).sort((a, b) => (a.iso + a.time).localeCompare(b.iso + b.time));
+  if (upcoming.length) {
+    const counts = countAvail();
+    const list = el("div", "cal-list");
+    list.appendChild(el("h3", null, "Kommende Castings"));
+    upcoming.forEach(e => {
+      const item = el("div", "cal-list-item");
+      const head = el("div");
+      head.innerHTML = `<b>${escapeHtml(e.name)}</b> <span class="muted">– ${fmtSlot(e.iso + "T" + e.time)}</span>` + (e.state === "met" ? ' <span class="muted">✓ kennengelernt</span>' : "");
+      item.appendChild(head);
+      const who = (counts[e.iso + "T" + e.time] || {}).who || [];
+      const present = el("div", "cal-present");
+      present.innerHTML = who.length
+        ? `<span class="muted">dabei (${who.length}/${CONFIG.FLATMATES.length}):</span> ` + who.map(w => `<span class="chip">${escapeHtml(w)}</span>`).join(" ")
+        : `<span class="muted">keine Verfügbarkeit für diesen Termin eingetragen</span>`;
+      item.appendChild(present);
+      list.appendChild(item);
+    });
+    host.appendChild(list);
+  }
+}
+
+function starBar(avg) {
+  const f = Math.max(0, Math.min(5, Math.round(avg)));
+  return `<span class="stars-inline" title="Ø ${avg.toFixed(1)}">${"★".repeat(f)}${"☆".repeat(5 - f)}</span>`;
+}
+function copyText(t) {
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).catch(() => {});
+  else { const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch (e) {} document.body.removeChild(ta); }
+}
+
+// -------- utils --------
+function flash(node) { if (!node) return; node.classList.add("show"); setTimeout(() => node.classList.remove("show"), 1200); }
+function escapeHtml(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+// -------- boot --------
+async function boot() {
+  await Promise.all([loadApplicants(), refreshState(), loadAiConfig()]);
+  updateAiBtn();
+  renderOverview();
+  setInterval(async () => {
+    await refreshState();
+    if (!$("#tab-over").classList.contains("hidden")) renderOverview();
+    else if (!$("#tab-cal").classList.contains("hidden")) renderCalendar();
+    else if (mode === "all") renderAllGrid();
+  }, 20000);
+}
+
+initGate();
+if (ME && (MOCK || sessionStorage.getItem("wg_code") === CONFIG.ACCESS_CODE)) {
+  $("#whoSel").value = ME;
+  startApp();
+}
+</script>
+</body>
+</html>

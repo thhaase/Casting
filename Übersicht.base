@@ -1,0 +1,20 @@
+views:
+  - type: table
+    name: Table
+    filters:
+      and:
+        - file.inFolder("_2_Areas/hubü_wg/Casting/Bewerber")
+    order:
+      - file.name
+      - status
+      - alter
+      - studium_beruf
+      - kennenlernen
+      - einzug
+      - eindruck
+    sort: []
+    columnSize:
+      note.kennenlernen: 127
+      note.einzug: 87
+  - type: table
+    name: View

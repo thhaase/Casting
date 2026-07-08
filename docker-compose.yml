@@ -1,0 +1,17 @@
+services:
+  casting:
+    build: .
+    image: wg-casting
+    container_name: wg-casting
+    ports:
+      - "8000:8000"          # http://localhost:8000
+    volumes:
+      - ./data:/data         # SQLite-DB (Votes, Termine, Bewerber:innen, KI-Key)
+    environment:
+      # Gemeinsamer WG-Zugangscode (Seite + Backend).
+      ACCESS_CODE: "${ACCESS_CODE:-wg-casting}"
+      # Die 5 Mitbewohner:innen, kommagetrennt (setzt FLATMATES in der Seite).
+      FLATMATES: "${FLATMATES:-}"
+      # Default-Gemini-Modell (kann in der App überschrieben werden).
+      GEMINI_MODEL: "${GEMINI_MODEL:-gemini-flash-latest}"
+    restart: unless-stopped

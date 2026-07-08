@@ -1,0 +1,9 @@
+.git
+data
+dist
+static
+**/__pycache__
+**/*.pyc
+tool/server/.venv
+tool/server/*.db
+*.db
