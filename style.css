@@ -116,6 +116,33 @@ table.candidates thead th {
   white-space: nowrap;
 }
 
+table.candidates thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+table.candidates thead th.sortable:hover { color: var(--text); }
+
+table.candidates thead th.sortable::after {
+  content: "↕";
+  display: inline-block;
+  margin-left: 0.35rem;
+  opacity: 0.35;
+  font-size: 0.7rem;
+}
+
+table.candidates thead th.sortable.sort-asc::after {
+  content: "↑";
+  opacity: 1;
+  color: var(--accent);
+}
+
+table.candidates thead th.sortable.sort-desc::after {
+  content: "↓";
+  opacity: 1;
+  color: var(--accent);
+}
+
 tr.row-summary td {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
@@ -123,7 +150,16 @@ tr.row-summary td {
   white-space: nowrap;
 }
 
+tr.row-summary {
+  cursor: pointer;
+}
+
 tr.row-summary:hover { background: var(--row-hover); }
+
+tr.row-summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
 
 tr.row-summary.dimmed { opacity: 0.55; }
 
@@ -138,21 +174,15 @@ tr.row-detail td {
   border-bottom: 1px solid var(--border);
   background: var(--detail-bg);
   white-space: normal;
+  cursor: default;
 }
 
 .name-cell {
-  cursor: pointer;
   font-weight: 600;
   color: var(--text);
 }
 
-.name-cell:hover { color: var(--accent); text-decoration: underline; }
-
-.name-cell:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
+tr.row-summary:hover .name-cell { color: var(--accent); }
 
 .chevron {
   display: inline-block;
@@ -208,7 +238,7 @@ tr.row-detail td {
   font-size: 0.8rem;
 }
 
-/* ---- Mobile: Tabelle wird zu einer Liste aufklappbarer Karten ---- */
+/* ---- Mobile: kompakte, scanbare Liste statt Karten ---- */
 @media (max-width: 700px) {
   body { padding: 1.5rem 0.85rem 3rem; }
 
@@ -219,7 +249,7 @@ tr.row-detail td {
     flex-wrap: nowrap;
     overflow-x: auto;
     justify-content: flex-start;
-    margin: 0 -0.85rem 1.5rem;
+    margin: 0 -0.85rem 1.25rem;
     padding: 0 0.85rem 0.35rem;
     -webkit-overflow-scrolling: touch;
   }
@@ -246,77 +276,62 @@ tr.row-detail td {
 
   table.candidates thead { display: none; }
 
-  tr.row-summary,
-  tr.row-detail {
+  /* Jede Bewerber:in wird eine kompakte Zeile: Name fett auf Zeile 1,
+     alle übrigen Felder als eine fließende, umbrechende Zeile darunter.
+     So sieht man auf einen Blick viele Personen statt einer riesigen Karte. */
+  tr.row-summary {
     display: block;
     width: 100%;
-  }
-
-  tr.row-detail:not(.open) { display: none; }
-
-  tr.row-summary {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    padding: 0 1rem;
-    margin-bottom: 0.75rem;
-  }
-
-  tr.row-summary:has(+ tr.row-detail.open) {
-    margin-bottom: 0;
-    border-radius: 12px 12px 0 0;
-  }
-
-  tr.row-detail.open {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-top: 1px dashed var(--border);
-    border-radius: 0 0 12px 12px;
-    padding: 0 1rem 0.75rem;
-    margin-bottom: 0.75rem;
-  }
-
-  tr.row-summary td,
-  tr.row-detail td {
-    display: block;
-    width: auto;
-    white-space: normal;
-  }
-
-  tr.row-summary td {
-    padding: 0.5rem 0;
-    border-bottom: 1px dashed var(--border);
-  }
-
-  tr.row-summary td:last-child { border-bottom: none; }
-
-  tr.row-summary td:not(.name-cell)::before {
-    content: attr(data-label);
-    display: block;
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--muted);
-    margin-bottom: 0.15rem;
-  }
-
-  tr.row-summary .name-cell {
-    display: flex;
-    align-items: center;
-    min-height: 44px;
-    font-size: 1.05rem;
-    padding: 0.65rem 0;
+    padding: 0.65rem 0.15rem;
     border-bottom: 1px solid var(--border);
   }
 
+  tr.row-summary:first-of-type { padding-top: 0.15rem; }
+
+  tr.row-detail { width: 100%; }
+  tr.row-detail:not(.open) { display: none; }
+
+  tr.row-summary td,
   tr.row-detail td {
-    padding: 0.75rem 0 0;
+    display: inline;
+    padding: 0;
+    border: none;
+    white-space: normal;
   }
+
+  .name-cell {
+    display: block;
+    font-size: 1rem;
+    margin-bottom: 0.15rem;
+  }
+
+  /* Meta-Felder (Status, Alter, Studium, Kennenlernen, Einzug, Eindruck)
+     fließen als ein Text mit "·"-Trennern hinter dem Namen. Spaltenreihenfolge
+     ist fix (siehe SORT_COLUMNS/table_row), daher gezielt per nth-child. */
+  tr.row-summary td:nth-child(n+2) {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-left: 0.4rem;
+  }
+
+  tr.row-summary td:nth-child(2)::before { content: ""; }                       /* Status: Badge reicht als Label */
+  tr.row-summary td:nth-child(3)::before { content: "· Alter "; }
+  tr.row-summary td:nth-child(4)::before { content: "· "; }                     /* Studium / Beruf */
+  tr.row-summary td:nth-child(5)::before { content: "· "; }                     /* Kennenlernen */
+  tr.row-summary td:nth-child(6)::before { content: "· "; }                     /* Einzug */
+  tr.row-summary td:nth-child(7)::before { content: "· Eindruck "; }
+
+  tr.row-detail.open {
+    padding: 0.25rem 0.15rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr.row-detail td { display: block; }
 
   .detail-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
+    padding-top: 0.5rem;
   }
 
   .hint { font-size: 0.78rem; padding: 0 0.5rem; }
