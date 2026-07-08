@@ -110,6 +110,21 @@ label { font-size: .85rem; }
 .detail-grid li { font-size: .85rem; margin: .15rem 0; }
 .detail-grid.hidden { display: none; }
 @media (max-width: 720px) { .detail-grid { grid-template-columns: 1fr; } }
+.info-row { grid-column: 1 / -1; display: flex; align-items: center; gap: .45rem; margin-top: .2rem; }
+.info-btn {
+  width: 1.4rem; height: 1.4rem; flex: 0 0 auto; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--detail-bg); color: var(--muted);
+  font-family: Georgia, "Times New Roman", serif; font-style: italic; font-weight: 700;
+  font-size: .92rem; line-height: 1; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; padding: 0;
+}
+.info-btn:hover { color: var(--text); border-color: var(--muted); }
+.info-label { font-size: .78rem; color: var(--muted); }
+.fulltext {
+  white-space: pre-wrap; word-break: break-word; font-size: .88rem; line-height: 1.55;
+  max-height: 60vh; overflow-y: auto; margin-top: .6rem; padding: .8rem .9rem;
+  background: var(--detail-bg); border: 1px solid var(--border); border-radius: 10px;
+}
 
 /* ---- Scheduling grid ---- */
 .sched-controls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-bottom: .8rem; }
@@ -458,7 +473,8 @@ async function api(action, payload = {}) {
       const list = s.applicants || CONFIG.FALLBACK_APPLICANTS.slice();
       const app = { name: payload.name || "Neue:r Bewerber:in", status: "Beworben",
         alter: payload.alter || "", studium_beruf: "", kennenlernen: "", einzug: "", eindruck: "",
-        situation: payload.text ? [payload.text.slice(0, 200)] : [], person: [], erwartung: [] };
+        situation: payload.text ? [payload.text.slice(0, 200)] : [], person: [], erwartung: [],
+        bewerbertext: payload.text || "" };
       list.push(app); s.applicants = list; mockSave(s);
       return { ok: true, applicant: app, raw: "(Testmodus: kein KI-Text)" };
     }
@@ -681,11 +697,38 @@ function renderOverview() {
       sec.appendChild(bulletList(items));
       detail.appendChild(sec);
     });
+    // Info-Symbol: öffnet den kompletten Original-Bewerbungstext.
+    const fullText = (app.bewerbertext || "").trim();
+    if (fullText) {
+      const infoRow = el("div", "info-row");
+      const info = el("button", "info-btn", "i");
+      info.type = "button";
+      info.title = "Kompletter Bewerbungstext";
+      info.setAttribute("aria-label", "Kompletten Bewerbungstext anzeigen");
+      info.addEventListener("click", ev => { ev.stopPropagation(); openFullText(name, fullText); });
+      infoRow.appendChild(info);
+      infoRow.appendChild(el("span", "info-label", "kompletter Bewerbungstext"));
+      detail.appendChild(infoRow);
+    }
     head.appendChild(detail);
 
     card.appendChild(head);
     host.appendChild(card);
   });
+}
+
+function openFullText(name, text) {
+  const box = el("div");
+  box.appendChild(el("h3", null, "Bewerbungstext – " + name));
+  const pre = el("div", "fulltext");
+  pre.textContent = text;
+  box.appendChild(pre);
+  const actions = el("div", "modal-actions");
+  const close = el("button", "btn", "Schließen");
+  close.addEventListener("click", closeModal);
+  actions.appendChild(close);
+  box.appendChild(actions);
+  openModal(box);
 }
 
 // -------- Bewerber:in hinzufügen (KI) + KI-Einstellungen --------

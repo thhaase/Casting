@@ -114,13 +114,17 @@ def init_db(db):
             name TEXT PRIMARY KEY, status TEXT, "alter" TEXT, studium_beruf TEXT,
             kennenlernen TEXT, einzug TEXT, eindruck TEXT,
             situation TEXT, person TEXT, erwartung TEXT,
-            raw_md TEXT, created TEXT
+            raw_md TEXT, bewerbertext TEXT, created TEXT
         );
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY, value TEXT
         );
         """
     )
+    # Migration: Spalte für den vollen Original-Bewerbungstext nachrüsten (Alt-DBs).
+    have = {row[1] for row in db.execute("PRAGMA table_info(applicants)").fetchall()}
+    if "bewerbertext" not in have:
+        db.execute('ALTER TABLE applicants ADD COLUMN bewerbertext TEXT DEFAULT ""')
     db.commit()
 
 
@@ -135,7 +139,7 @@ def seed_applicants(db):
     except (OSError, ValueError):
         return
     for a in seed:
-        insert_applicant(db, a, raw_md=a.get("raw_md", ""))
+        insert_applicant(db, a, raw_md=a.get("raw_md", ""), bewerbertext=a.get("bewerbertext", ""))
     db.commit()
 
 
@@ -319,16 +323,20 @@ def read_applicants(db):
                 a[k] = json.loads(r[k]) if r[k] else []
             except (TypeError, ValueError):
                 a[k] = []
+        keys = r.keys()
+        # Voller Bewerbungstext; für Alt-Einträge ohne Original der strukturierte raw_md.
+        a["bewerbertext"] = (r["bewerbertext"] if "bewerbertext" in keys else "") \
+            or (r["raw_md"] if "raw_md" in keys else "") or ""
         out.append(a)
     return out
 
 
-def insert_applicant(db, a, raw_md=""):
+def insert_applicant(db, a, raw_md="", bewerbertext=""):
     """Fügt eine Bewerber:in ein (überschreibt bei gleichem Namen)."""
-    cols = APPLICANT_SCALARS + APPLICANT_LISTS + ["raw_md", "created"]
+    cols = APPLICANT_SCALARS + APPLICANT_LISTS + ["raw_md", "bewerbertext", "created"]
     vals = [a.get(k, "") for k in APPLICANT_SCALARS]
     vals += [json.dumps(a.get(k, []) or [], ensure_ascii=False) for k in APPLICANT_LISTS]
-    vals += [raw_md, now_iso()]
+    vals += [raw_md, bewerbertext, now_iso()]
     placeholders = ", ".join(["?"] * len(cols))
     # Spaltennamen quoten ("alter" ist ein SQL-Schlüsselwort).
     collist = ", ".join(f'"{c}"' for c in cols)
@@ -369,7 +377,7 @@ def add_applicant(db, params):
         return jsonify(ok=False, error="Konnte keinen Namen ermitteln – bitte Namensfeld ausfüllen.")
     applicant.setdefault("status", "Beworben")
 
-    insert_applicant(db, applicant, raw_md=raw_md)
+    insert_applicant(db, applicant, raw_md=raw_md, bewerbertext=text)
     db.commit()
     return jsonify(ok=True, applicant=applicant, raw=raw_md)
 
