@@ -7,7 +7,9 @@
 # Nutzung:
 #   ./build_site.sh [Ausgabeordner]
 #
-# Standard-Ausgabeordner: /home/thhaase/Github/Casting (lokales GitHub-Pages-Repo)
+# Standard-Ausgabeordner: ./dist (gitignored). Die erzeugten Dateien sind
+# Build-Artefakte und werden NICHT eingecheckt. Der Docker-Build ruft das
+# Skript mit einem eigenen Zielordner auf (siehe Dockerfile).
 #
 # Voraussetzung: python3 mit dem Modul "yaml" (pyyaml).
 #   Prüfen/Installieren: python3 -c "import yaml" || pip install pyyaml
@@ -16,7 +18,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BEWERBER_DIR="$SCRIPT_DIR/Bewerber"
-OUTPUT_DIR="${1:-/home/thhaase/Github/Casting}"
+OUTPUT_DIR="${1:-$SCRIPT_DIR/dist}"
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "Fehler: python3 wird benötigt, ist aber nicht installiert." >&2

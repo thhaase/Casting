@@ -86,11 +86,12 @@ FLATMATES: ["Anna", "Ben", "Cem", "Dana", "Eli"],  // eure 5 echten Namen
 
 ### 5. Bauen & veröffentlichen
 ```bash
-./build_site.sh
+./build_site.sh dist        # baut in ./dist (Standardausgabe)
 ```
-Das kopiert `wg-tool.html` automatisch mit in den Pages-Ordner und erzeugt `applicants.json`.
-Danach wie gewohnt committen/pushen. Auf der Übersichtsseite gibt es jetzt oben den Button
-**„⭐ Voten & 📅 Termine planen“**.
+Das kopiert `wg-tool.html` automatisch mit und erzeugt `applicants.json`. Für GitHub
+Pages den Inhalt von `dist/` ins Pages-Repo bzw. den Pages-Ordner committen/pushen
+(die Build-Artefakte selbst werden im Quell-Repo nicht mehr eingecheckt).
+Auf der Übersichtsseite gibt es oben den Button **„⭐ Voten & 📅 Termine planen“**.
 
 ---
 
