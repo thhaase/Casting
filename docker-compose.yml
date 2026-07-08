@@ -4,7 +4,10 @@ services:
     image: wg-casting
     container_name: wg-casting
     ports:
-      - "8000:8000"          # http://localhost:8000
+      # Nur an localhost binden: öffentlich erreichbar ausschließlich über den
+      # Caddy-Reverse-Proxy (HTTPS, https://casting.thhaase.de). Direkter Zugriff
+      # auf IP:8000 aus dem Internet ist damit dicht.
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./data:/data         # SQLite-DB (Votes, Termine, Bewerber:innen, KI-Key)
     environment:

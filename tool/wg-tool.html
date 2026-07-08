@@ -2,14 +2,23 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f7f7f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0d12" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WG Casting">
+<meta name="format-detection" content="telephone=no">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%232563eb'/><text x='32' y='44' font-size='30' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>WG</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%232563eb'/><text x='32' y='44' font-size='30' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>WG</text></svg>">
 <title>WG Casting – Übersicht, Voten &amp; Termine</title>
 <style>
 :root {
   --bg: #f7f7f9; --card-bg: #ffffff; --text: #1a1a1f; --muted: #6b7280;
   --border: #e5e7eb; --accent: #2563eb; --row-hover: rgba(0,0,0,0.035);
-  --detail-bg: rgba(0,0,0,0.02);
+  --detail-bg: rgba(0,0,0,0.02); --sun-bg: rgba(0,0,0,0.075);
   --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 8px rgba(0,0,0,0.04);
   --good: #16a34a; --warn: #d97706;
   color-scheme: light dark;
@@ -18,7 +27,7 @@
   :root {
     --bg: #0b0d12; --card-bg: #14161c; --text: #e8e8ec; --muted: #9aa0aa;
     --border: #262a33; --accent: #60a5fa; --row-hover: rgba(255,255,255,0.045);
-    --detail-bg: rgba(255,255,255,0.025);
+    --detail-bg: rgba(255,255,255,0.025); --sun-bg: rgba(255,255,255,0.07);
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 8px rgba(0,0,0,0.3);
     --good: #22c55e; --warn: #f59e0b;
   }
@@ -104,13 +113,15 @@ label { font-size: .85rem; }
 
 /* ---- Scheduling grid ---- */
 .sched-controls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-bottom: .8rem; }
-.grid-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+.grid-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; -webkit-overflow-scrolling: touch; }
 table.grid { border-collapse: collapse; font-size: .72rem; }
 table.grid th, table.grid td { border: 1px solid var(--border); text-align: center; }
-table.grid th { padding: .3rem .35rem; white-space: nowrap; background: var(--detail-bg); }
+table.grid th { padding: .3rem .35rem; white-space: nowrap; background: var(--detail-bg); position: sticky; top: 0; z-index: 2; }
 table.grid td.time { position: sticky; left: 0; background: var(--detail-bg); white-space: nowrap; padding: .15rem .4rem; z-index: 1; font-variant-numeric: tabular-nums; }
-table.grid th.corner { position: sticky; left: 0; z-index: 3; }
-table.grid td.cell { width: 34px; height: 22px; cursor: pointer; }
+table.grid th.corner { position: sticky; left: 0; top: 0; z-index: 4; }
+table.grid th.sun { background: var(--sun-bg); }
+table.grid td.cell { width: 34px; height: 22px; cursor: pointer; touch-action: pan-x; user-select: none; -webkit-user-select: none; }
+table.grid td.cell.sun { background: var(--sun-bg); }
 table.grid td.cell.mine { background: var(--accent); }
 .legend { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; font-size: .78rem; margin-top: .6rem; }
 .swatch { display: inline-block; width: 16px; height: 16px; border-radius: 3px; border: 1px solid var(--border); vertical-align: middle; margin-right: .3rem; }
@@ -214,6 +225,71 @@ table.grid td.cell.mine { background: var(--accent); }
 
 .hidden { display: none !important; }
 .notice { font-size: .8rem; color: var(--warn); text-align: center; margin-bottom: 1rem; }
+
+/* ---- Touch-/Mobile-Feinschliff ---- */
+html { -webkit-text-size-adjust: 100%; }
+* { -webkit-tap-highlight-color: transparent; }
+.btn:active { transform: scale(.96); }
+#mainTabs .ti { margin-right: .35rem; }
+#mainTabs .tl { vertical-align: middle; }
+.only-touch { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .only-touch { display: inline; }
+  .only-mouse { display: none; }
+  .btn { min-height: 42px; }
+  .stars { font-size: 1.9rem; letter-spacing: 5px; }
+  .star { padding: 0 .05rem; }
+  table.grid td.cell { height: 30px; min-width: 40px; }
+}
+
+@media (max-width: 640px) {
+  body {
+    padding: calc(.75rem + env(safe-area-inset-top)) 0 calc(5.25rem + env(safe-area-inset-bottom));
+  }
+  .wrap { padding: 0 .9rem; }
+  .page-header { margin-bottom: 1rem; }
+  .page-header h1 { font-size: 1.2rem; line-height: 1.25; }
+  .page-header p { font-size: .82rem; }
+  .card { padding: 1rem .95rem; border-radius: 16px; margin-bottom: .9rem; }
+  input, select, textarea { font-size: 16px; }        /* verhindert Auto-Zoom auf iOS */
+  .btn { padding: .55rem 1rem; }
+
+  /* Untere App-Navigation (wie in einer nativen App) */
+  #mainTabs {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+    margin: 0; gap: 0; flex-wrap: nowrap; justify-content: space-around;
+    background: var(--card-bg); border-top: 1px solid var(--border);
+    padding: .4rem .25rem calc(.4rem + env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 16px rgba(0,0,0,.08);
+    backdrop-filter: saturate(1.1);
+  }
+  #mainTabs .btn {
+    flex: 1; border: none; background: none; box-shadow: none; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; gap: .1rem;
+    padding: .35rem .2rem; font-size: .66rem; color: var(--muted); min-height: 0;
+    transition: color .12s ease, transform .1s ease;
+  }
+  #mainTabs .btn:active { transform: scale(.9); }
+  #mainTabs .btn.active { color: var(--accent); font-weight: 700; background: none; box-shadow: none; }
+  #mainTabs .ti { margin: 0; font-size: 1.35rem; line-height: 1; }
+
+  /* Modale werden zu Bottom-Sheets */
+  .modal { align-items: flex-end; padding: 0; }
+  .modal-box {
+    max-width: 100%; width: 100%; border-radius: 20px 20px 0 0; max-height: 92vh;
+    padding: 1.2rem 1.15rem calc(1.4rem + env(safe-area-inset-bottom));
+    animation: sheet-up .24s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+  .tabs { gap: .4rem; }
+  .over-toolbar .btn { flex: 1 1 auto; }
+  .detail-grid { gap: .7rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-box { animation: none; }
+  .btn:active, #mainTabs .btn:active { transform: none; }
+}
 </style>
 </head>
 <body>
@@ -242,10 +318,10 @@ table.grid td.cell.mine { background: var(--accent); }
   <!-- App -->
   <main id="app" class="hidden">
     <p class="who">Angemeldet als <b id="whoLabel"></b> · <button id="switchBtn" class="btn" style="padding:.15rem .6rem;font-size:.75rem">wechseln</button></p>
-    <nav class="tabs">
-      <button class="btn active" data-tab="over">👥 Übersicht &amp; Voten</button>
-      <button class="btn" data-tab="sched">📅 Termine</button>
-      <button class="btn" data-tab="cal">📆 Castings</button>
+    <nav class="tabs" id="mainTabs">
+      <button class="btn active" data-tab="over"><span class="ti">👥</span><span class="tl">Übersicht</span></button>
+      <button class="btn" data-tab="sched"><span class="ti">📅</span><span class="tl">Termine</span></button>
+      <button class="btn" data-tab="cal"><span class="ti">📆</span><span class="tl">Castings</span></button>
     </nav>
 
     <!-- Übersicht + Voten -->
@@ -272,7 +348,7 @@ table.grid td.cell.mine { background: var(--accent); }
           </div>
           <span class="saved" id="schedSaved">gespeichert ✓</span>
         </div>
-        <p class="muted" id="schedHint" style="font-size:.8rem;margin-top:0">Trag deine <b>allgemeine</b> Verfügbarkeit ein (gilt für alle Kennenlern-Termine): ziehen oder tippen zum Markieren. Wird automatisch gespeichert.</p>
+        <p class="muted" id="schedHint" style="font-size:.8rem;margin-top:0">Trag deine <b>allgemeine</b> Verfügbarkeit für die nächsten <b>3 Wochen</b> ein (gilt für alle Kennenlern-Termine). <span class="only-touch">Tippen zum Markieren, senkrecht ziehen für mehrere, waagerecht wischen zum Blättern.</span><span class="only-mouse">Ziehen zum Markieren.</span> Wird automatisch gespeichert.</p>
         <div class="grid-scroll"><div id="gridHost"></div></div>
         <div class="legend" id="legend"></div>
         <div class="best hidden" id="bestBox"></div>
@@ -312,7 +388,7 @@ const CONFIG = {
   FLATMATES: ["Mitbewohner:in 1", "Mitbewohner:in 2", "Mitbewohner:in 3", "Mitbewohner:in 4", "Mitbewohner:in 5"],
 
   // Terminraster (allgemeine Verfügbarkeit)
-  DAYS_AHEAD: 14,     // wie viele Tage ab heute
+  DAYS_AHEAD: 21,     // wie viele Tage ab heute (3 Wochen)
   START_HOUR: 9,      // erster Slot
   END_HOUR: 22,       // letzter Slot (exklusiv Ende)
   SLOT_MIN: 60,       // Slotlänge in Minuten (30 oder 60 empfohlen)
@@ -811,6 +887,8 @@ async function saveVote(applicant, rating, comment) {
 // ======================================================================
 let DAYS = [], TIMES = [], mode = "mine";
 let painting = false, paintTo = true, mySelSet = new Set(), saveTimer = null;
+// Zeiger-Steuerung für das Malen der Verfügbarkeit (Maus: ziehen; Touch: tippen oder senkrecht ziehen).
+let pdX = 0, pdY = 0, pdStartCell = null, pdActive = false, pdIsTouch = false;
 
 function buildGrid() {
   DAYS = []; TIMES = [];
@@ -818,7 +896,7 @@ function buildGrid() {
   const dfmt = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
   for (let d = 0; d < CONFIG.DAYS_AHEAD; d++) {
     const dt = new Date(today); dt.setDate(today.getDate() + d);
-    DAYS.push({ iso: dt.toISOString().slice(0, 10), label: dfmt.format(dt) });
+    DAYS.push({ iso: dt.toISOString().slice(0, 10), label: dfmt.format(dt), sun: dt.getDay() === 0 });
   }
   for (let m = CONFIG.START_HOUR * 60; m < CONFIG.END_HOUR * 60; m += CONFIG.SLOT_MIN) {
     const hh = String(Math.floor(m / 60)).padStart(2, "0");
@@ -851,13 +929,13 @@ function gridSkeleton() {
   const table = el("table", "grid");
   const thead = el("thead"), htr = el("tr");
   htr.appendChild(el("th", "corner", "Zeit"));
-  DAYS.forEach(day => htr.appendChild(el("th", null, day.label)));
+  DAYS.forEach(day => htr.appendChild(el("th", day.sun ? "sun" : null, day.label)));
   thead.appendChild(htr); table.appendChild(thead);
   const tbody = el("tbody");
   TIMES.forEach(t => {
     const tr = el("tr");
     tr.appendChild(el("td", "time", t.label));
-    DAYS.forEach(day => { const td = el("td", "cell"); td.dataset.key = `${day.iso}T${t.label}`; tr.appendChild(td); });
+    DAYS.forEach(day => { const td = el("td", day.sun ? "cell sun" : "cell"); td.dataset.key = `${day.iso}T${t.label}`; tr.appendChild(td); });
     tbody.appendChild(tr);
   });
   table.appendChild(tbody);
@@ -870,9 +948,8 @@ function renderMineGrid() {
   const table = gridSkeleton(); host.appendChild(table);
   table.querySelectorAll("td.cell").forEach(td => {
     if (mySelSet.has(td.dataset.key)) td.classList.add("mine");
-    td.addEventListener("pointerdown", ev => { ev.preventDefault(); painting = true; paintTo = !td.classList.contains("mine"); applyPaint(td); });
-    td.addEventListener("pointerenter", () => { if (painting) applyPaint(td); });
   });
+  attachPaint(table);
   renderLegend(false);
 }
 function applyPaint(td) {
@@ -881,7 +958,46 @@ function applyPaint(td) {
   else { td.classList.remove("mine"); mySelSet.delete(key); }
   scheduleSave();
 }
-document.addEventListener("pointerup", () => { painting = false; });
+function cellFromPoint(x, y) {
+  const elm = document.elementFromPoint(x, y);
+  return elm && elm.classList && elm.classList.contains("cell") ? elm : null;
+}
+// Ein Handler für Maus (ziehen in jede Richtung) und Touch (tippen = umschalten,
+// senkrecht ziehen = malen, waagerecht wischen = Tage blättern).
+function attachPaint(table) {
+  table.addEventListener("pointerdown", ev => {
+    const td = ev.target.closest && ev.target.closest("td.cell");
+    if (!td) return;
+    pdX = ev.clientX; pdY = ev.clientY; pdStartCell = td;
+    pdIsTouch = ev.pointerType !== "mouse";
+    if (!pdIsTouch) {
+      ev.preventDefault();
+      pdActive = true; paintTo = !td.classList.contains("mine"); applyPaint(td);
+    } else {
+      pdActive = false;
+    }
+  });
+  table.addEventListener("pointermove", ev => {
+    if (!pdStartCell) return;
+    if (!pdActive) {
+      if (!pdIsTouch) return;
+      const dx = Math.abs(ev.clientX - pdX), dy = Math.abs(ev.clientY - pdY);
+      if (dy > 8 && dy > dx) { pdActive = true; paintTo = !pdStartCell.classList.contains("mine"); applyPaint(pdStartCell); }
+      else return;
+    }
+    const td = cellFromPoint(ev.clientX, ev.clientY);
+    if (td) applyPaint(td);
+  });
+  const end = ev => {
+    if (pdStartCell && pdIsTouch && !pdActive) {
+      const dx = Math.abs(ev.clientX - pdX), dy = Math.abs(ev.clientY - pdY);
+      if (dx < 8 && dy < 8) { paintTo = !pdStartCell.classList.contains("mine"); applyPaint(pdStartCell); }
+    }
+    pdActive = false; pdStartCell = null;
+  };
+  table.addEventListener("pointerup", end);
+  table.addEventListener("pointercancel", () => { pdActive = false; pdStartCell = null; });
+}
 function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
