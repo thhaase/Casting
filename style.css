@@ -207,3 +207,117 @@ tr.row-detail td {
   text-align: center;
   font-size: 0.8rem;
 }
+
+/* ---- Mobile: Tabelle wird zu einer Liste aufklappbarer Karten ---- */
+@media (max-width: 700px) {
+  body { padding: 1.5rem 0.85rem 3rem; }
+
+  .page-header h1 { font-size: 1.3rem; }
+  .page-header p { font-size: 0.82rem; }
+
+  .filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    margin: 0 -0.85rem 1.5rem;
+    padding: 0 0.85rem 0.35rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-btn {
+    flex: 0 0 auto;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
+  }
+
+  .table-wrap {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  table.candidates,
+  table.candidates tbody {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  table.candidates thead { display: none; }
+
+  tr.row-summary,
+  tr.row-detail {
+    display: block;
+    width: 100%;
+  }
+
+  tr.row-detail:not(.open) { display: none; }
+
+  tr.row-summary {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 0 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  tr.row-summary:has(+ tr.row-detail.open) {
+    margin-bottom: 0;
+    border-radius: 12px 12px 0 0;
+  }
+
+  tr.row-detail.open {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-top: 1px dashed var(--border);
+    border-radius: 0 0 12px 12px;
+    padding: 0 1rem 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  tr.row-summary td,
+  tr.row-detail td {
+    display: block;
+    width: auto;
+    white-space: normal;
+  }
+
+  tr.row-summary td {
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  tr.row-summary td:last-child { border-bottom: none; }
+
+  tr.row-summary td:not(.name-cell)::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    margin-bottom: 0.15rem;
+  }
+
+  tr.row-summary .name-cell {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 1.05rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr.row-detail td {
+    padding: 0.75rem 0 0;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .hint { font-size: 0.78rem; padding: 0 0.5rem; }
+}
