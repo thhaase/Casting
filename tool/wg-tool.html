@@ -83,22 +83,31 @@ label { font-size: .85rem; }
 /* ---- Applicant cards (Übersicht) ---- */
 .appl { border-top: 1px solid var(--border); padding: 1rem 0; }
 .appl:first-child { border-top: none; padding-top: .2rem; }
-.appl-head { display: grid; grid-template-columns: 1fr auto; gap: .4rem 1rem; align-items: start; }
+.appl-head { display: grid; grid-template-columns: auto 1fr auto; gap: .4rem 1rem; align-items: start; }
+.appl-chev { align-self: stretch; display: flex; align-items: center; justify-content: center;
+  width: 2.4rem; cursor: pointer; border-radius: 10px; color: var(--muted);
+  background: var(--border); transition: background .15s ease, color .15s ease; }
+.appl-chev:hover { background: var(--accent); color: #fff; }
+.appl-chev .chev { font-size: 1.7rem; line-height: 1; transition: transform .15s ease; display: inline-block; }
+.appl.open .appl-chev .chev { transform: rotate(90deg); }
 .appl-title { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; cursor: pointer; }
-.appl-title .chev { color: var(--muted); transition: transform .15s ease; display: inline-block; }
-.appl.open .appl-title .chev { transform: rotate(90deg); }
 .appl-name { font-weight: 600; font-size: 1.05rem; }
 .facts { font-size: .8rem; color: var(--muted); margin: .15rem 0 0; }
+.detail-grid .facts { grid-column: 1 / -1; margin: 0 0 .2rem; }
 .rate-box { text-align: right; }
 .stars { font-size: 1.4rem; letter-spacing: 2px; user-select: none; white-space: nowrap; }
 .star { cursor: pointer; color: var(--muted); opacity: .4; }
 .star.on { color: #f5b301; opacity: 1; }
-.agg { font-size: .82rem; color: var(--muted); margin-top: .35rem; }
-.agg .avg { color: var(--text); font-weight: 600; }
 .voter-chips { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .4rem; }
 .chip { font-size: .72rem; border: 1px solid var(--border); border-radius: 999px; padding: .1rem .5rem; color: var(--muted); }
 .chip .g { color: #f5b301; }
-.my-comment { grid-column: 1 / -1; }
+.my-comment { grid-column: 1 / -1; margin-top: .3rem; }
+.comment-toggle { background: none; border: none; color: var(--muted); font-size: .82rem;
+  cursor: pointer; padding: .3rem 0; display: inline-flex; align-items: center; gap: .35rem; }
+.comment-toggle:hover { color: var(--accent); }
+.comment-editor { margin-top: .35rem; }
+.comment-actions { display: flex; gap: .5rem; margin-top: .4rem; }
+.comment-actions .btn { font-size: .8rem; padding: .3rem .8rem; }
 .comments { grid-column: 1 / -1; margin-top: .3rem; }
 .comment-line { font-size: .82rem; margin: .15rem 0; }
 .comment-line b { color: var(--text); }
@@ -135,9 +144,22 @@ table.grid th { padding: .3rem .35rem; white-space: nowrap; background: var(--de
 table.grid td.time { position: sticky; left: 0; background: var(--detail-bg); white-space: nowrap; padding: .15rem .4rem; z-index: 1; font-variant-numeric: tabular-nums; }
 table.grid th.corner { position: sticky; left: 0; top: 0; z-index: 4; }
 table.grid th.sun { background: var(--sun-bg); }
-table.grid td.cell { width: 34px; height: 22px; cursor: pointer; touch-action: pan-x; user-select: none; -webkit-user-select: none; }
+table.grid td.cell { width: 34px; height: 22px; cursor: pointer; touch-action: pan-x; user-select: none; -webkit-user-select: none; position: relative; }
 table.grid td.cell.sun { background: var(--sun-bg); }
 table.grid td.cell.mine { background: var(--accent); }
+/* Zellen, für die einer Bewerber:in ein Termin vorgeschlagen/bestätigt wurde */
+table.grid td.cell.cell-proposed { box-shadow: inset 0 0 0 2px #2563eb; }
+table.grid td.cell.cell-confirmed { box-shadow: inset 0 0 0 2px #15803d; }
+.cell-tag { position: absolute; top: 0; left: 1px; font-size: .5rem; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; color: #12285e; pointer-events: none; }
+/* Zusammenfassung: wem welcher Termin vorgeschlagen wurde */
+#propBox { margin-top: .9rem; }
+#propBox h4 { margin: 0 0 .45rem; font-size: .9rem; }
+.prop-line { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; padding: .3rem 0; border-top: 1px solid var(--border); font-size: .85rem; }
+.prop-line:first-of-type { border-top: none; }
+.prop-name { font-weight: 600; }
+.prop-badge { font-size: .68rem; font-weight: 700; padding: .05rem .45rem; border-radius: 999px; white-space: nowrap; }
+.prop-badge.is-proposed { background: #dbeafe; color: #1e40af; }
+.prop-badge.is-confirmed { background: #dcfce7; color: #166534; }
 .legend { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; font-size: .78rem; margin-top: .6rem; }
 .swatch { display: inline-block; width: 16px; height: 16px; border-radius: 3px; border: 1px solid var(--border); vertical-align: middle; margin-right: .3rem; }
 .best { margin-top: 1.2rem; }
@@ -358,14 +380,15 @@ html { -webkit-text-size-adjust: 100%; }
       <div class="card">
         <div class="sched-controls">
           <div class="tabs" style="margin:0">
-            <button class="btn active" id="viewMine" style="font-size:.82rem;padding:.35rem .8rem">Meine Verfügbarkeit</button>
-            <button class="btn" id="viewAll" style="font-size:.82rem;padding:.35rem .8rem">Überblick &amp; beste Termine</button>
+            <button class="btn active" id="viewAll" style="font-size:.82rem;padding:.35rem .8rem">Überblick &amp; beste Termine</button>
+            <button class="btn" id="viewMine" style="font-size:.82rem;padding:.35rem .8rem">Meine Verfügbarkeit</button>
           </div>
           <span class="saved" id="schedSaved">gespeichert ✓</span>
         </div>
         <p class="muted" id="schedHint" style="font-size:.8rem;margin-top:0">Trag deine <b>allgemeine</b> Verfügbarkeit für die nächsten <b>3 Wochen</b> ein (gilt für alle Kennenlern-Termine). <span class="only-touch">Tippen zum Markieren, senkrecht ziehen für mehrere, waagerecht wischen zum Blättern.</span><span class="only-mouse">Ziehen zum Markieren.</span> Wird automatisch gespeichert.</p>
         <div class="grid-scroll"><div id="gridHost"></div></div>
         <div class="legend" id="legend"></div>
+        <div id="propBox" class="hidden"></div>
         <div class="best hidden" id="bestBox"></div>
         <div class="rank hidden" id="rankBox"></div>
       </div>
@@ -405,7 +428,7 @@ const CONFIG = {
   // Terminraster (allgemeine Verfügbarkeit)
   DAYS_AHEAD: 21,     // wie viele Tage ab heute (3 Wochen)
   START_HOUR: 9,      // erster Slot
-  END_HOUR: 22,       // letzter Slot (exklusiv Ende)
+  END_HOUR: 21,       // exklusives Ende -> letzter Slot ist 20:00 (20-21 Uhr)
   SLOT_MIN: 60,       // Slotlänge in Minuten (30 oder 60 empfohlen)
 
   // Workflow: ab wie vielen Stimmen gilt jemand als "bereit zum Einladen",
@@ -605,36 +628,38 @@ function renderOverview() {
   const host = $("#applList"); host.innerHTML = "";
   if (!APPLICANTS.length) { host.appendChild(el("p", "muted", "Keine Bewerber:innen gefunden.")); return; }
 
-  APPLICANTS.forEach(app => {
+  // Neueste zuerst: zuletzt hinzugefügte Bewerber:innen oben anzeigen
+  APPLICANTS.slice().reverse().forEach(app => {
     const name = app.name;
     const mine = myVote(name) || {};
     const card = el("div", "appl" + (openCards[name] ? " open" : ""));
     const head = el("div", "appl-head");
 
-    // links: Titel (klickbar zum Aufklappen) + Fakten + Aggregat + Kommentare
+    const toggleOpen = () => {
+      openCards[name] = !openCards[name];
+      card.classList.toggle("open", openCards[name]);
+      detail.classList.toggle("hidden", !openCards[name]);
+    };
+
+    // ganz links: großer Aufklapp-Pfeil über die volle Zeilenhöhe
+    const chevCol = el("div", "appl-chev");
+    chevCol.setAttribute("role", "button");
+    chevCol.setAttribute("aria-label", "Details ein-/ausklappen");
+    chevCol.appendChild(el("span", "chev", "›"));
+    chevCol.addEventListener("click", toggleOpen);
+    head.appendChild(chevCol);
+
+    // Mitte: Titel (klickbar zum Aufklappen) + Bewertungs-Chips + Kommentare
     const left = el("div");
     const title = el("div", "appl-title");
-    title.appendChild(el("span", "chev", "›"));
     title.appendChild(el("span", "appl-name", name));
     if (app.status) {
       const badge = el("span", "badge", app.status);
       badge.style.setProperty("--badge-color", STATUS_COLORS[app.status] || "#64748b");
       title.appendChild(badge);
     }
-    title.addEventListener("click", () => {
-      openCards[name] = !openCards[name];
-      card.classList.toggle("open", openCards[name]);
-      detail.classList.toggle("hidden", !openCards[name]);
-    });
+    title.addEventListener("click", toggleOpen);
     left.appendChild(title);
-
-    const facts = factsLine(app);
-    if (facts) left.appendChild(el("p", "facts", facts));
-
-    const a = avgOf(name);
-    const agg = el("div", "agg");
-    agg.innerHTML = a ? `<span class="avg">Ø ${a.avg.toFixed(1)}</span> · ${a.n} Stimme(n)` : `<span class="muted">noch keine Bewertung</span>`;
-    left.appendChild(agg);
 
     const chips = el("div", "voter-chips");
     votesFor(name).forEach(v => {
@@ -677,20 +702,52 @@ function renderOverview() {
     right.appendChild(el("div", null, "")).appendChild(savedEl);
     head.appendChild(right);
 
-    // mein Kommentar
+    // mein Kommentar – social-media-style: Button öffnet das Eingabefeld
     const cWrap = el("div", "my-comment");
+    const hasComment = !!(mine.comment || "").trim();
+    const toggle = el("button", "comment-toggle");
+    toggle.type = "button";
+    toggle.innerHTML = hasComment ? "✏️ Kommentar bearbeiten" : "💬 Kommentieren";
+
+    const editor = el("div", "comment-editor hidden");
     const ta = el("textarea"); ta.placeholder = "Deine Notiz / dein Kommentar (nur für die WG sichtbar)";
     ta.value = mine.comment || "";
-    ta.addEventListener("blur", async () => {
-      if ((ta.value || "") === (mine.comment || "")) return;
-      await saveVote(name, Number((myVote(name) || {}).rating) || 0, ta.value);
-      flash(savedEl); renderOverview();
+    const editActions = el("div", "comment-actions");
+    const sendBtn = el("button", "btn primary", "Speichern");
+    sendBtn.type = "button";
+    const cancelBtn = el("button", "btn", "Abbrechen");
+    cancelBtn.type = "button";
+
+    toggle.addEventListener("click", () => {
+      const opening = editor.classList.contains("hidden");
+      editor.classList.toggle("hidden", !opening);
+      if (opening) ta.focus();
     });
-    cWrap.appendChild(ta);
+    cancelBtn.addEventListener("click", () => {
+      ta.value = mine.comment || "";
+      editor.classList.add("hidden");
+    });
+    sendBtn.addEventListener("click", async () => {
+      if ((ta.value || "") !== (mine.comment || "")) {
+        await saveVote(name, Number((myVote(name) || {}).rating) || 0, ta.value);
+        flash(savedEl); renderOverview();
+      } else {
+        editor.classList.add("hidden");
+      }
+    });
+
+    editActions.appendChild(sendBtn);
+    editActions.appendChild(cancelBtn);
+    editor.appendChild(ta);
+    editor.appendChild(editActions);
+    cWrap.appendChild(toggle);
+    cWrap.appendChild(editor);
     head.appendChild(cWrap);
 
-    // Details (Situation / Person / Erwartung)
+    // Details (nur beim Aufklappen sichtbar): Fakten + Situation / Person / Erwartung
     const detail = el("div", "detail-grid" + (openCards[name] ? "" : " hidden"));
+    const facts = factsLine(app);
+    if (facts) detail.appendChild(el("p", "facts", facts));
     [["Situation", app.situation], ["Person", app.person], ["Erwartung", app.erwartung]].forEach(([h, items]) => {
       const sec = el("section");
       sec.appendChild(el("h3", null, h));
@@ -928,7 +985,7 @@ async function saveVote(applicant, rating, comment) {
 // ======================================================================
 //  TERMINE  (allgemeine Verfügbarkeit, When2meet-Style)
 // ======================================================================
-let DAYS = [], TIMES = [], mode = "mine";
+let DAYS = [], TIMES = [], mode = "all";
 let painting = false, paintTo = true, mySelSet = new Set(), saveTimer = null;
 // Zeiger-Steuerung für das Malen der Verfügbarkeit (Maus: ziehen; Touch: tippen oder senkrecht ziehen).
 let pdX = 0, pdY = 0, pdStartCell = null, pdActive = false, pdIsTouch = false;
@@ -939,7 +996,7 @@ function buildGrid() {
   const dfmt = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
   for (let d = 0; d < CONFIG.DAYS_AHEAD; d++) {
     const dt = new Date(today); dt.setDate(today.getDate() + d);
-    DAYS.push({ iso: dt.toISOString().slice(0, 10), label: dfmt.format(dt), sun: dt.getDay() === 0 });
+    DAYS.push({ iso: isoLocal(dt), label: dfmt.format(dt), sun: dt.getDay() === 0 });
   }
   for (let m = CONFIG.START_HOUR * 60; m < CONFIG.END_HOUR * 60; m += CONFIG.SLOT_MIN) {
     const hh = String(Math.floor(m / 60)).padStart(2, "0");
@@ -956,17 +1013,18 @@ function slotsOf(voter) {
 function renderSched() {
   if (!buildGrid._done) { buildGrid(); buildGrid._done = true; }
   renderNextSteps();
-  if (mode === "mine") renderMineGrid(); else renderAllGrid();
+  const all = mode === "all";
+  $("#viewAll").classList.toggle("active", all);
+  $("#viewMine").classList.toggle("active", !all);
+  $("#schedHint").classList.toggle("hidden", all);
+  if (all) { renderAllGrid(); }
+  else {
+    $("#bestBox").classList.add("hidden"); $("#rankBox").classList.add("hidden"); $("#propBox").classList.add("hidden");
+    renderMineGrid();
+  }
 }
-$("#viewMine").addEventListener("click", () => {
-  mode = "mine"; $("#viewMine").classList.add("active"); $("#viewAll").classList.remove("active");
-  $("#schedHint").classList.remove("hidden"); $("#bestBox").classList.add("hidden"); $("#rankBox").classList.add("hidden");
-  renderMineGrid();
-});
-$("#viewAll").addEventListener("click", () => {
-  mode = "all"; $("#viewAll").classList.add("active"); $("#viewMine").classList.remove("active");
-  $("#schedHint").classList.add("hidden"); renderAllGrid();
-});
+$("#viewMine").addEventListener("click", () => { mode = "mine"; renderSched(); });
+$("#viewAll").addEventListener("click", () => { mode = "all"; renderSched(); });
 
 function gridSkeleton() {
   const table = el("table", "grid");
@@ -1053,9 +1111,18 @@ function scheduleSave() {
   }, 500);
 }
 
+// Slot-Zeit innerhalb des konfigurierten Rasters? Blendet Alt-Daten außerhalb
+// (z. B. früher eingetragene 21:00-Slots) aus Zählung/„Beste Termine"/Vorschlägen aus.
+function slotInRange(k) {
+  const t = String(k).split("T")[1]; if (!t) return false;
+  const [h, m] = t.split(":").map(Number);
+  const mm = h * 60 + m;
+  return mm >= CONFIG.START_HOUR * 60 && mm < CONFIG.END_HOUR * 60;
+}
 function countAvail() {
   const counts = {};
   CONFIG.FLATMATES.forEach(fm => slotsOf(fm).forEach(k => {
+    if (!slotInRange(k)) return;
     if (!counts[k]) counts[k] = { count: 0, who: [] };
     counts[k].count++; counts[k].who.push(fm);
   }));
@@ -1066,18 +1133,63 @@ function heatColor(count, max) {
   const light = 88 - Math.round((count / max) * 45);
   return `hsl(140 55% ${light}%)`;
 }
+// Initialen einer Person, z. B. "Margary Martínez" -> "MM".
+function initials(name) { return String(name).trim().split(/\s+/).map(w => w[0] || "").join("").slice(0, 2).toUpperCase(); }
+// Wem wurde welcher Termin vorgeschlagen bzw. bestätigt?
+function meetingProposals() {
+  const out = [];
+  STATE.meetings.forEach(m => {
+    if (m.state === "confirmed" || m.state === "met") {
+      if (m.confirmedSlot) out.push({ name: m.applicant, kind: m.state, slots: [m.confirmedSlot] });
+    } else if (m.state === "proposed" || m.state === "responded") {
+      const s = parseSlots(m.proposedSlots);
+      if (s.length) out.push({ name: m.applicant, kind: "proposed", slots: s });
+    }
+  });
+  return out;
+}
 function renderAllGrid() {
   const host = $("#gridHost"); host.innerHTML = "";
   const table = gridSkeleton(); host.appendChild(table);
   const counts = countAvail(), max = CONFIG.FLATMATES.length;
+  const props = meetingProposals();
+  const bySlot = {};
+  props.forEach(p => p.slots.forEach(k => (bySlot[k] = bySlot[k] || []).push({ name: p.name, kind: p.kind })));
   table.querySelectorAll("td.cell").forEach(td => {
-    const c = counts[td.dataset.key];
+    const key = td.dataset.key;
+    const c = counts[key];
     if (c) { td.style.background = heatColor(c.count, max); td.style.color = "#0b0d12"; td.textContent = c.count; td.title = `${c.count}/${max} frei: ${c.who.join(", ")}`; }
+    const pr = bySlot[key];
+    if (pr && pr.length) {
+      const conf = pr.some(x => x.kind === "confirmed" || x.kind === "met");
+      td.classList.add(conf ? "cell-confirmed" : "cell-proposed");
+      const names = [...new Set(pr.map(x => x.name))];
+      const tag = el("span", "cell-tag"); tag.textContent = names.map(initials).join(",");
+      td.appendChild(tag);
+      td.title = (td.title ? td.title + " · " : "") + `${conf ? "Bestätigt mit" : "Vorgeschlagen an"}: ${names.join(", ")}`;
+    }
   });
   renderLegend(true);
+  renderProposals(props);
   renderBest(counts, max);
   renderRanking();
   renderNextSteps();
+}
+// Klartext-Übersicht unter dem Raster: wem welcher Termin vorgeschlagen wurde.
+function renderProposals(props) {
+  const box = $("#propBox"); if (!box) return;
+  box.innerHTML = "";
+  if (!props.length) { box.classList.add("hidden"); return; }
+  box.classList.remove("hidden");
+  box.appendChild(el("h4", null, "Wem welcher Termin vorgeschlagen wurde"));
+  props.slice().sort((a, b) => a.name.localeCompare(b.name, "de")).forEach(p => {
+    const conf = p.kind === "confirmed" || p.kind === "met";
+    const line = el("div", "prop-line");
+    line.appendChild(el("span", "prop-badge " + (conf ? "is-confirmed" : "is-proposed"), conf ? "bestätigt" : "vorgeschlagen"));
+    line.appendChild(el("span", "prop-name", p.name));
+    line.appendChild(el("span", "muted", p.slots.map(fmtSlot).join(" · ")));
+    box.appendChild(line);
+  });
 }
 function renderBest(counts, max) {
   const box = $("#bestBox"); box.classList.remove("hidden"); box.innerHTML = "";
@@ -1199,6 +1311,7 @@ function actionRow(app, ws) {
     badge(ws.kind === "stale" ? "stale" : "proposed",
       "📨 vorgeschlagen" + (age != null ? ` vor ${age} Tag${age === 1 ? "" : "en"}` : "") + (m.owner ? ` · ${m.owner}` : ""));
     button("", "✅ Termin eintragen", () => openSchedule(app));
+    button("ghost mini", "✏️ Vorschlag ändern", () => openPropose(app));
     if (ws.kind === "stale") button("ghost mini", "Nachricht erneut kopieren", () => openPropose(app, true));
   } else if (ws.kind === "confirmed") {
     badge("confirmed", "✔️ " + (m.confirmedSlot ? fmtSlot(m.confirmedSlot) : "bestätigt"));
@@ -1252,7 +1365,8 @@ function topSlots(limit) {
 }
 function proposeMessage(name, slots) {
   const lines = slots.map(s => "• " + fmtSlot(s)).join("\n");
-  return `Hi ${name}! Schön, dass du dich bei uns beworben hast. 😊\nFür ein Kennenlernen würde bei uns passen:\n${lines}\nPasst dir davon etwas – oder hast du einen anderen Vorschlag?\nLiebe Grüße, deine HuBü-WG`;
+  const firstName = String(name).trim().split(/\s+/)[0];
+  return `Hi ${firstName}! Schön, dass du dich bei uns beworben hast. 😊\nFür ein Kennenlernen würde bei uns passen:\n${lines}\nPasst dir davon etwas – oder hast du einen anderen Vorschlag?\nLiebe Grüße, deine HuBü-WG`;
 }
 
 // Slots, die bei anderen Bewerber:innen noch "in der Schwebe" oder fest sind -> blockieren.
@@ -1279,8 +1393,9 @@ function takenByOthers(name) {
 
 function openPropose(app, reopen) {
   const m = meetingOf(app.name);
+  const isEdit = parseSlots(m.proposedSlots).length > 0;
   const box = el("div");
-  box.appendChild(el("h3", null, "Termine vorschlagen – " + app.name));
+  box.appendChild(el("h3", null, (isEdit ? "Vorschlag ändern – " : "Termine vorschlagen – ") + app.name));
 
   // Verantwortliche:r ganz oben
   const ownerRow = el("div", "owner-row");
@@ -1329,7 +1444,7 @@ function openPropose(app, reopen) {
   const copyBtn = el("button", "act-btn ghost", "📋 Nachricht kopieren");
   copyBtn.addEventListener("click", () => { copyText(msg.value); copyBtn.textContent = "kopiert ✓"; setTimeout(() => copyBtn.textContent = "📋 Nachricht kopieren", 1500); });
   actions.appendChild(copyBtn);
-  const saveBtn = el("button", "act-btn", "Als vorgeschlagen markieren");
+  const saveBtn = el("button", "act-btn", isEdit ? "✔️ Änderung speichern" : "Als vorgeschlagen markieren");
   saveBtn.addEventListener("click", async () => {
     const chosen = opts.filter(o => o.checked).map(o => o.value);
     if (!chosen.length) { alert("Bitte mindestens einen Termin auswählen."); return; }
@@ -1395,6 +1510,10 @@ function openSchedule(app) {
 }
 
 function pad(n) { return String(n).padStart(2, "0"); }
+// Lokales Datum als YYYY-MM-DD. NICHT toISOString() nehmen: das liefert UTC und
+// verschiebt in Zeitzonen oestlich von UTC (z. B. CEST) den Tag um eins nach hinten,
+// wodurch Rasterspalten-Schluessel und Beschriftung auseinanderlaufen.
+function isoLocal(dt) { return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`; }
 
 // ======================================================================
 //  CASTINGS-KALENDER (Monatsansicht der bestätigten Termine)
@@ -1436,7 +1555,7 @@ function renderCalendar() {
   const first = new Date(year, month, 1);
   let offset = (first.getDay() + 6) % 7;  // Mo=0 ... So=6
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = isoLocal(new Date());
 
   for (let i = 0; i < offset; i++) grid.appendChild(el("div", "cal-cell empty"));
   for (let d = 1; d <= daysInMonth; d++) {

@@ -463,14 +463,23 @@ def parse_note(md):
 # ---- Optional: statische Seite mitservieren (lokale Tests / Docker) ----
 
 if STATIC_DIR:
+    def _no_store(resp):
+        # Verhindert, dass Browser eine alte Version der App-Seite/Assets zeigen.
+        # So sieht die/der Nutzer:in neue Änderungen sofort – ohne den Cache
+        # manuell leeren zu müssen.
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+        return resp
+
     @app.route("/")
     def index():
         # Die App selbst ist die Startseite (keine separate Übersichtsseite mehr).
-        return send_from_directory(STATIC_DIR, "wg-tool.html")
+        return _no_store(send_from_directory(STATIC_DIR, "wg-tool.html"))
 
     @app.route("/<path:path>")
     def static_files(path):
-        return send_from_directory(STATIC_DIR, path)
+        return _no_store(send_from_directory(STATIC_DIR, path))
 
 
 # ---- Start: DB anlegen & (einmalig) Bewerber:innen seeden ----
