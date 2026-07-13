@@ -98,8 +98,8 @@ label { font-size: .85rem; }
 .stars { font-size: 1.4rem; letter-spacing: 2px; user-select: none; white-space: nowrap; }
 .star { cursor: pointer; color: var(--muted); opacity: .4; }
 .star.on { color: #f5b301; opacity: 1; }
-.voter-chips { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr;
-  gap: .3rem .4rem; margin-top: .5rem; justify-items: start; }
+.voter-chips { grid-column: 1 / -1; display: flex; flex-wrap: wrap;
+  gap: .3rem .4rem; margin-top: .5rem; }
 .chip { font-size: .72rem; border: 1px solid var(--border); border-radius: 999px;
   padding: .1rem .5rem; color: var(--muted); white-space: nowrap; max-width: 100%;
   overflow: hidden; text-overflow: ellipsis; }
