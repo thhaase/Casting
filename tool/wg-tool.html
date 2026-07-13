@@ -249,6 +249,8 @@ table.grid td.cell.cell-confirmed { background: #800020 !important; box-shadow: 
 
 /* ---- Castings-Kalender ---- */
 .cal-head { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: .9rem; }
+.cal-subscribe { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; margin: 0 0 .3rem; }
+.cal-subscribe .btn { font-size: .82rem; padding: .35rem .8rem; text-decoration: none; }
 .cal-title { font-weight: 600; font-size: 1.1rem; min-width: 11rem; text-align: center; text-transform: capitalize; }
 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .cal-dow { text-align: center; font-size: .72rem; color: var(--muted); padding-bottom: .2rem; }
@@ -1567,6 +1569,19 @@ function renderCalendar() {
   next.addEventListener("click", () => { calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 1); renderCalendar(); });
   head.appendChild(prev); head.appendChild(title); head.appendChild(next);
   host.appendChild(head);
+
+  // iCal-Abo: Link zum automatisch aktualisierten Kalender-Feed
+  const sub = el("div", "cal-subscribe");
+  const icsUrl = new URL("calendar.ics", location.href).href;
+  const webcal = icsUrl.replace(/^https?:\/\//, "webcal://");
+  const subLink = el("a", "btn", "📆 Kalender abonnieren");
+  subLink.href = webcal; subLink.title = "In Kalender-App abonnieren (aktualisiert sich automatisch)";
+  const copyBtn = el("button", "btn", "🔗 Link kopieren");
+  copyBtn.type = "button";
+  copyBtn.addEventListener("click", () => { copyText(icsUrl); copyBtn.textContent = "✓ kopiert"; setTimeout(() => copyBtn.textContent = "🔗 Link kopieren", 1500); });
+  sub.appendChild(subLink); sub.appendChild(copyBtn);
+  host.appendChild(sub);
+  host.appendChild(el("p", "hint-inline", "Enthält alle bestätigten Castings – wird von deiner Kalender-App automatisch aktualisiert."));
 
   if (!evs.length) host.appendChild(el("p", "hint-inline", "Noch keine bestätigten Termine. Bestätige Termine im Tab „📅 Termine“."));
 

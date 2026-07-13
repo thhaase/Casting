@@ -42,7 +42,12 @@ import re
 import sqlite3
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover
+    ZoneInfo = None
 
 import yaml
 from flask import Flask, g, jsonify, request, send_from_directory
@@ -458,6 +463,110 @@ def parse_note(md):
             if item:
                 applicant[current].append(item)
     return applicant
+
+
+# ---- iCal-Feed: bestätigte Castings als abonnierbarer Kalender ----
+# Kalender-Apps (Google/Apple/Outlook) können /calendar.ics abonnieren und
+# aktualisieren sich automatisch – es gibt also keine Datei zu pflegen, der
+# Feed wird bei jedem Abruf frisch aus der DB erzeugt.
+
+CASTING_TZ = os.environ.get("CASTING_TZ", "Europe/Berlin")
+SLOT_MINUTES = int(os.environ.get("SLOT_MINUTES", "60"))  # Slotlänge wie im Frontend
+
+
+def _ics_escape(text):
+    return (str(text or "")
+            .replace("\\", "\\\\").replace(";", "\\;")
+            .replace(",", "\\,").replace("\n", "\\n"))
+
+
+def _fold_ics_line(line):
+    # RFC 5545: Zeilen max. 75 Oktetts; Fortsetzung mit CRLF + Leerzeichen.
+    data = line.encode("utf-8")
+    if len(data) <= 75:
+        return line
+    parts, first = [], True
+    while data:
+        limit = 75 if first else 74  # Fortsetzungszeilen beginnen mit 1 Space
+        cut = min(limit, len(data))
+        while cut > 0 and cut < len(data) and (data[cut] & 0xC0) == 0x80:
+            cut -= 1  # kein Multibyte-Zeichen zerschneiden
+        chunk = data[:cut].decode("utf-8")
+        parts.append(chunk if first else " " + chunk)
+        data = data[cut:]
+        first = False
+    return "\r\n".join(parts)
+
+
+def _slot_to_utc(slot):
+    # slot z.B. "2026-07-15T14:00" (lokale Zeit CASTING_TZ) -> UTC-datetime.
+    dt = datetime.strptime(slot, "%Y-%m-%dT%H:%M")
+    if ZoneInfo is not None:
+        try:
+            return dt.replace(tzinfo=ZoneInfo(CASTING_TZ)).astimezone(timezone.utc)
+        except Exception:
+            pass
+    return dt.replace(tzinfo=timezone.utc)
+
+
+def _parse_slot_list(v):
+    if not v:
+        return []
+    try:
+        x = json.loads(v)
+        return [s for s in x if isinstance(s, str)] if isinstance(x, list) else []
+    except Exception:
+        return []
+
+
+def build_ics(db):
+    rows = read_table(db, "meetings", MEETINGS_COLS)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//WG-Casting//Termine//DE",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-WR-CALNAME:WG-Casting Termine",
+        "X-WR-TIMEZONE:" + CASTING_TZ,
+    ]
+    for m in rows:
+        name = (m.get("applicant") or "Casting").strip()
+        state = m.get("state")
+        # Nur bestätigte / stattgefundene Castings als feste Termine exportieren.
+        if state not in ("confirmed", "met") or not m.get("confirmedSlot"):
+            continue
+        try:
+            start = _slot_to_utc(m["confirmedSlot"])
+        except Exception:
+            continue
+        end = start + timedelta(minutes=SLOT_MINUTES)
+        slot_safe = re.sub(r"[^0-9A-Za-z]", "", m["confirmedSlot"])
+        name_safe = re.sub(r"[^0-9A-Za-z]", "", name) or "casting"
+        uid = f"{name_safe}-{slot_safe}@casting.thhaase.de"
+        summary = ("Casting: " if state == "confirmed" else "Casting (kennengelernt): ") + name
+        lines += [
+            "BEGIN:VEVENT",
+            "UID:" + uid,
+            "DTSTAMP:" + stamp,
+            "DTSTART:" + start.strftime("%Y%m%dT%H%M%SZ"),
+            "DTEND:" + end.strftime("%Y%m%dT%H%M%SZ"),
+            "SUMMARY:" + _ics_escape(summary),
+            "STATUS:CONFIRMED",
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+    return "\r\n".join(_fold_ics_line(ln) for ln in lines) + "\r\n"
+
+
+@app.route("/calendar.ics")
+def calendar_ics():
+    body = build_ics(get_db())
+    resp = app.response_class(body, mimetype="text/calendar; charset=utf-8")
+    resp.headers["Content-Disposition"] = 'inline; filename="wg-casting.ics"'
+    resp.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return resp
 
 
 # ---- Optional: statische Seite mitservieren (lokale Tests / Docker) ----
