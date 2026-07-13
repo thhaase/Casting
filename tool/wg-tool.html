@@ -155,9 +155,11 @@ table.grid td.cell.sun { background: var(--sun-bg); }
 table.grid td.cell.mine { background: var(--accent); }
 /* Zellen, für die einer Bewerber:in ein Termin vorgeschlagen/bestätigt wurde */
 table.grid td.cell.cell-proposed { box-shadow: inset 0 0 0 3px #2563eb; }
-table.grid td.cell.cell-confirmed { box-shadow: inset 0 0 0 3px #800020; }
-.cell-tag { position: absolute; top: 0; left: 1px; font-size: .68rem; font-weight: 900; line-height: 1; letter-spacing: -.03em; color: #12285e; pointer-events: none; text-shadow: 0 0 2px rgba(255,255,255,.7); }
-.cell-confirmed .cell-tag { color: #800020; }
+table.grid td.cell.cell-confirmed { background: #800020 !important; box-shadow: inset 0 0 0 3px #800020; }
+.cell-tag { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: .68rem; font-weight: 900; line-height: 1; letter-spacing: -.03em; color: #12285e;
+  pointer-events: none; text-shadow: 0 0 2px rgba(255,255,255,.7); }
+.cell-confirmed .cell-tag { color: #fff; text-shadow: none; }
 /* Zusammenfassung: wem welcher Termin vorgeschlagen wurde */
 #propBox { margin-top: .9rem; }
 #propBox h4 { margin: 0 0 .45rem; font-size: .9rem; }
@@ -1181,6 +1183,9 @@ function renderAllGrid() {
     if (pr && pr.length) {
       const conf = pr.some(x => x.kind === "confirmed" || x.kind === "met");
       td.classList.add(conf ? "cell-confirmed" : "cell-proposed");
+      // Zahl entfernen, damit die mittig platzierten Initialen frei stehen
+      // (die Auslastung zeigt weiterhin die Hintergrundfarbe).
+      td.textContent = "";
       const names = [...new Set(pr.map(x => x.name))];
       const tag = el("span", "cell-tag"); tag.textContent = names.map(initials).join(",");
       td.appendChild(tag);
