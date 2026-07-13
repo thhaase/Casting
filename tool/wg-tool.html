@@ -154,9 +154,10 @@ table.grid td.cell { width: 34px; height: 22px; cursor: pointer; touch-action: p
 table.grid td.cell.sun { background: var(--sun-bg); }
 table.grid td.cell.mine { background: var(--accent); }
 /* Zellen, für die einer Bewerber:in ein Termin vorgeschlagen/bestätigt wurde */
-table.grid td.cell.cell-proposed { box-shadow: inset 0 0 0 2px #2563eb; }
-table.grid td.cell.cell-confirmed { box-shadow: inset 0 0 0 2px #15803d; }
-.cell-tag { position: absolute; top: 0; left: 1px; font-size: .5rem; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; color: #12285e; pointer-events: none; }
+table.grid td.cell.cell-proposed { box-shadow: inset 0 0 0 3px #2563eb; }
+table.grid td.cell.cell-confirmed { box-shadow: inset 0 0 0 3px #800020; }
+.cell-tag { position: absolute; top: 0; left: 1px; font-size: .68rem; font-weight: 900; line-height: 1; letter-spacing: -.03em; color: #12285e; pointer-events: none; text-shadow: 0 0 2px rgba(255,255,255,.7); }
+.cell-confirmed .cell-tag { color: #800020; }
 /* Zusammenfassung: wem welcher Termin vorgeschlagen wurde */
 #propBox { margin-top: .9rem; }
 #propBox h4 { margin: 0 0 .45rem; font-size: .9rem; }
@@ -165,7 +166,7 @@ table.grid td.cell.cell-confirmed { box-shadow: inset 0 0 0 2px #15803d; }
 .prop-name { font-weight: 600; }
 .prop-badge { font-size: .68rem; font-weight: 700; padding: .05rem .45rem; border-radius: 999px; white-space: nowrap; }
 .prop-badge.is-proposed { background: #dbeafe; color: #1e40af; }
-.prop-badge.is-confirmed { background: #dcfce7; color: #166534; }
+.prop-badge.is-confirmed { background: #f6dde2; color: #800020; }
 .legend { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; font-size: .78rem; margin-top: .6rem; }
 .swatch { display: inline-block; width: 16px; height: 16px; border-radius: 3px; border: 1px solid var(--border); vertical-align: middle; margin-right: .3rem; }
 .best { margin-top: 1.2rem; }
