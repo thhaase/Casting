@@ -623,6 +623,7 @@ function factsLine(app) {
   if (app.status) parts.push(app.status);
   if (app.alter != null && app.alter !== "") parts.push(app.alter + " J.");
   if (app.studium_beruf) parts.push(app.studium_beruf);
+  if (app.sprache) parts.push("Sprache: " + app.sprache);
   if (app.kennenlernen) parts.push(app.kennenlernen);
   if (app.einzug) parts.push("Einzug: " + app.einzug);
   return parts.join(" · ");

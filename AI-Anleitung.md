@@ -16,6 +16,7 @@ name:
 status: Beworben
 alter: 
 studium_beruf: 
+sprache: 
 kennenlernen: 
 einzug: 
 eindruck:
@@ -30,6 +31,7 @@ Regeln pro Feld:
 - **status**: bei einer neuen Bewerbung immer `Beworben`. (Spätere Stufen wie `Online-Kennenlernen geplant`, `Vor-Ort-Besuch geplant`, `Zugesagt`, `Abgesagt` werden manuell nachgepflegt, nie vom Agenten automatisch gesetzt.)
 - **alter**: nur die Zahl, keine Einheit. Leer lassen, falls nicht erwähnt.
 - **studium_beruf**: kurze Angabe, max. ca. 5 Worte (z. B. `Lehramtsstudium (TU Dresden)`, `Architektin`, `Ausbildung Tiermedizinische Fachangestellte`).
+- **sprache**: die Sprache, in der die Bewerbung verfasst ist – erkannt am Bewerbungstext selbst (z. B. `Deutsch`, `Englisch`). Nur die Sprache des Textes, nicht im Text erwähnte Fremdsprachenkenntnisse.
 - **kennenlernen**: `Online` oder `Vor Ort`. Aus dem Text ableiten (z. B. "wohnt weiter weg" / ausdrücklicher Wunsch → `Online`). Ohne gegenteiligen Hinweis Standard `Vor Ort`.
 - **einzug**: Datum oder kurzer Text (`ab sofort`, `flexibel`, `ab April`). Falls nichts erwähnt wird: `offen`.
 - **eindruck**: immer leer lassen. Wird erst nach dem persönlichen Kennenlernen von Hand vergeben (Zahl 1–5).
@@ -71,6 +73,7 @@ name: Jasmin
 status: Beworben
 alter: 19
 studium_beruf: Lehramtsstudium (TU Dresden)
+sprache: Deutsch
 kennenlernen: Online
 einzug: offen
 eindruck:

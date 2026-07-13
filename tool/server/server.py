@@ -72,7 +72,7 @@ MEETINGS_COLS = ["applicant", "state", "proposedSlots", "proposedAt",
 MEETING_FIELDS = MEETINGS_COLS[1:-1]
 
 # Bewerber:innen-Felder (wie applicants.json / wg-tool.html erwartet).
-APPLICANT_SCALARS = ["name", "status", "alter", "studium_beruf",
+APPLICANT_SCALARS = ["name", "status", "alter", "studium_beruf", "sprache",
                      "kennenlernen", "einzug", "eindruck"]
 APPLICANT_LISTS = ["situation", "person", "erwartung"]
 
@@ -117,7 +117,7 @@ def init_db(db):
         );
         CREATE TABLE IF NOT EXISTS applicants (
             name TEXT PRIMARY KEY, status TEXT, "alter" TEXT, studium_beruf TEXT,
-            kennenlernen TEXT, einzug TEXT, eindruck TEXT,
+            sprache TEXT, kennenlernen TEXT, einzug TEXT, eindruck TEXT,
             situation TEXT, person TEXT, erwartung TEXT,
             raw_md TEXT, bewerbertext TEXT, created TEXT
         );
@@ -130,6 +130,9 @@ def init_db(db):
     have = {row[1] for row in db.execute("PRAGMA table_info(applicants)").fetchall()}
     if "bewerbertext" not in have:
         db.execute('ALTER TABLE applicants ADD COLUMN bewerbertext TEXT DEFAULT ""')
+    # Migration: Sprache der Bewerbung nachrüsten (Alt-DBs).
+    if "sprache" not in have:
+        db.execute('ALTER TABLE applicants ADD COLUMN sprache TEXT DEFAULT ""')
     db.commit()
 
 
