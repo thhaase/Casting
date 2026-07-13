@@ -563,7 +563,7 @@ def build_ics(db):
 @app.route("/calendar.ics")
 def calendar_ics():
     body = build_ics(get_db())
-    resp = app.response_class(body, mimetype="text/calendar; charset=utf-8")
+    resp = app.response_class(body, mimetype="text/calendar")
     resp.headers["Content-Disposition"] = 'inline; filename="wg-casting.ics"'
     resp.headers["Cache-Control"] = "no-cache, must-revalidate"
     return resp
