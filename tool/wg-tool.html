@@ -263,6 +263,13 @@ table.grid td.cell.cell-confirmed { background: #800020 !important; box-shadow: 
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cal-ev-t { font-variant-numeric: tabular-nums; font-weight: 600; }
 .cal-ev.met { opacity: .6; }
+.cal-cell.cal-clickable { cursor: pointer; transition: border-color .12s ease, box-shadow .12s ease; }
+.cal-cell.cal-clickable:hover { border-color: var(--accent); }
+.cal-cell.cal-clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.day-ev { padding: .6rem 0; border-top: 1px solid var(--border); }
+.day-ev:first-of-type { border-top: none; }
+.day-ev-head { font-size: .95rem; }
+.day-ev-time { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent); }
 .cal-list { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 .cal-list-item { font-size: .9rem; padding: .45rem 0; border-top: 1px solid var(--border); }
 .cal-list-item:first-of-type { border-top: none; }
@@ -1621,6 +1628,14 @@ function renderCalendar() {
       evWrap.appendChild(ev);
     });
     cell.appendChild(evWrap);
+    if (dayEvents.length) {
+      cell.classList.add("cal-clickable");
+      cell.setAttribute("role", "button");
+      cell.tabIndex = 0;
+      const open = () => openDayModal(iso, dayEvents);
+      cell.addEventListener("click", open);
+      cell.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); open(); } });
+    }
     grid.appendChild(cell);
   }
   host.appendChild(grid);
@@ -1646,6 +1661,35 @@ function renderCalendar() {
     });
     host.appendChild(list);
   }
+}
+
+// Popup beim Klick auf einen Tag: welche Castings, wer kommt wann.
+function openDayModal(iso, dayEvents) {
+  const counts = countAvail();
+  const max = CONFIG.FLATMATES.length;
+  const dt = new Date(iso + "T00:00:00");
+  const dateLabel = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(dt);
+
+  const box = el("div");
+  box.appendChild(el("h3", null, dateLabel));
+
+  [...dayEvents].sort((a, b) => a.time.localeCompare(b.time)).forEach(e => {
+    const item = el("div", "day-ev");
+    const head = el("div", "day-ev-head");
+    head.innerHTML = `<span class="day-ev-time">${escapeHtml(e.time)}</span> <b>${escapeHtml(e.name)}</b>`
+      + (e.state === "met" ? ' <span class="muted">✓ kennengelernt</span>' : "");
+    item.appendChild(head);
+
+    const who = (counts[iso + "T" + e.time] || {}).who || [];
+    const present = el("div", "cal-present");
+    present.innerHTML = who.length
+      ? `<span class="muted">dabei (${who.length}/${max}):</span> ` + who.map(w => `<span class="chip">${escapeHtml(w)}</span>`).join(" ")
+      : `<span class="muted">keine Verfügbarkeit für diesen Termin eingetragen</span>`;
+    item.appendChild(present);
+    box.appendChild(item);
+  });
+
+  openModal(box);
 }
 
 function starBar(avg) {
