@@ -258,8 +258,10 @@ table.grid td.cell.cell-confirmed { background: #800020 !important; box-shadow: 
 .cal-cell.empty { border: none; background: transparent; }
 .cal-cell.today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
 .cal-day { font-size: .75rem; color: var(--muted); margin-bottom: .15rem; }
-.cal-ev { font-size: .72rem; background: var(--good); color: #06210f; border-radius: 5px; padding: .1rem .3rem; margin-top: .15rem;
+.cal-evs { display: flex; flex-direction: column; gap: .15rem; }
+.cal-ev { font-size: .72rem; background: var(--good); color: #06210f; border-radius: 5px; padding: .1rem .3rem;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-ev-t { font-variant-numeric: tabular-nums; font-weight: 600; }
 .cal-ev.met { opacity: .6; }
 .cal-list { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 .cal-list-item { font-size: .9rem; padding: .45rem 0; border-top: 1px solid var(--border); }
@@ -267,8 +269,17 @@ table.grid td.cell.cell-confirmed { background: #800020 !important; box-shadow: 
 .cal-present { margin-top: .25rem; display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
 .cal-present .chip { font-size: .72rem; }
 @media (max-width: 620px) {
-  .cal-cell { min-height: 56px; }
-  .cal-ev { font-size: .64rem; }
+  .cal-head { gap: .5rem; }
+  .cal-title { font-size: 1rem; min-width: 0; flex: 1; }
+  .cal-grid { gap: 3px; }
+  .cal-dow { font-size: .66rem; }
+  .cal-cell { min-height: 48px; padding: .15rem; border-radius: 6px; }
+  .cal-cell.has-ev { background: color-mix(in srgb, var(--good) 16%, var(--detail-bg)); }
+  .cal-day { font-size: .68rem; margin-bottom: .1rem; }
+  /* Zu schmal für Text: Termine als farbige Punkte, Details in der Liste unten */
+  .cal-evs { flex-direction: row; flex-wrap: wrap; gap: 2px; }
+  .cal-ev { width: 6px; height: 6px; padding: 0; border-radius: 50%; overflow: visible; }
+  .cal-ev-t, .cal-ev-n { display: none; }
 }
 
 .hidden { display: none !important; }
@@ -1599,14 +1610,17 @@ function renderCalendar() {
   for (let i = 0; i < offset; i++) grid.appendChild(el("div", "cal-cell empty"));
   for (let d = 1; d <= daysInMonth; d++) {
     const iso = `${year}-${pad(month + 1)}-${pad(d)}`;
-    const cell = el("div", "cal-cell" + (iso === todayIso ? " today" : ""));
+    const dayEvents = byDay[iso] || [];
+    const cell = el("div", "cal-cell" + (iso === todayIso ? " today" : "") + (dayEvents.length ? " has-ev" : ""));
     cell.appendChild(el("div", "cal-day", String(d)));
-    (byDay[iso] || []).forEach(e => {
+    const evWrap = el("div", "cal-evs");
+    dayEvents.forEach(e => {
       const ev = el("div", "cal-ev" + (e.state === "met" ? " met" : ""));
-      ev.textContent = `${e.time} ${e.name}`;
+      ev.innerHTML = `<span class="cal-ev-t">${escapeHtml(e.time)}</span> <span class="cal-ev-n">${escapeHtml(e.name)}</span>`;
       ev.title = `${e.time} – ${e.name}` + (e.state === "met" ? " (kennengelernt)" : "");
-      cell.appendChild(ev);
+      evWrap.appendChild(ev);
     });
+    cell.appendChild(evWrap);
     grid.appendChild(cell);
   }
   host.appendChild(grid);
