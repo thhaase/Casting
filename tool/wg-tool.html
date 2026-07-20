@@ -483,8 +483,9 @@ const CONFIG = {
 const GENERAL_KEY = "__ALLGEMEIN__";
 
 const STATUS_COLORS = {
-  "Zugesagt": "#16a34a", "Vor-Ort-Besuch geplant": "#d97706",
-  "Online-Kennenlernen geplant": "#6366f1", "Beworben": "#64748b", "Abgesagt": "#dc2626"
+  "Zugesagt": "#16a34a", "Kennengelernt": "#0d9488", "Vor-Ort-Besuch geplant": "#d97706",
+  "Online-Kennenlernen geplant": "#6366f1", "Beworben": "#64748b", "Abgesagt": "#dc2626",
+  "Abgesprungen": "#78716c"
 };
 
 const MOCK = location.protocol === "file:" || !CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.indexOf("PASTE_") === 0;
@@ -1272,7 +1273,7 @@ function renderLegend(all) {
 function meetingOf(name) { return STATE.meetings.find(m => m.applicant === name) || { applicant: name, state: "none" }; }
 function parseSlots(v) { if (!v) return []; if (Array.isArray(v)) return v; try { return JSON.parse(v) || []; } catch (e) { return []; } }
 function daysSince(iso) { if (!iso) return null; return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
-function statusClosed(app) { return app && (app.status === "Abgesagt" || app.status === "Zugesagt"); }
+function statusClosed(app) { return app && (app.status === "Abgesagt" || app.status === "Abgesprungen" || app.status === "Zugesagt"); }
 
 async function saveMeeting(name, patch) {
   let row = STATE.meetings.find(m => m.applicant === name);
@@ -1402,9 +1403,19 @@ function closeModal() { $("#modal").classList.add("hidden"); }
 $("#modalX").addEventListener("click", closeModal);
 $("#modal").addEventListener("click", e => { if (e.target && e.target.id === "modal") closeModal(); });
 
+// Frühestmöglicher Einladungstermin: nicht in der Vergangenheit und auch nicht
+// schon morgen – erst ab übermorgen (heute + 2 Tage) darf eingeladen werden,
+// damit es genug Vorlauf zum Verschicken & Zusagen gibt.
+function minInviteISO() {
+  const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 2);
+  return isoLocal(d);
+}
+function slotInvitable(key) {
+  return String(key).split("T")[0] >= minInviteISO();
+}
 function topSlots(limit) {
   const counts = countAvail();
-  return Object.keys(counts).map(k => ({ key: k, count: counts[k].count }))
+  return Object.keys(counts).filter(slotInvitable).map(k => ({ key: k, count: counts[k].count }))
     .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key)).slice(0, limit);
 }
 function proposeMessage(name, slots) {
@@ -1459,6 +1470,7 @@ function openPropose(app, reopen) {
     box.appendChild(el("p", "hint-inline", "Wähle die Termine, die ihr vorschlagen wollt (Top-Überschneidungen sind vorausgewählt):"));
   }
   if (taken.size) box.appendChild(el("p", "hint-inline", "Termine, die schon anderen Bewerber:innen vorgeschlagen wurden, sind ausgeblendet."));
+  box.appendChild(el("p", "hint-inline", "Einladungen sind erst ab übermorgen möglich – heutige und morgige Termine stehen nicht zur Auswahl."));
 
   const preset = new Set(already.length ? already : suggested.slice(0, 3).map(s => s.key));
   const opts = [];
