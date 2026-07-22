@@ -264,10 +264,24 @@ table.grid td.cell.cell-confirmed { background: #800020 !important; box-shadow: 
 .impr-saved { font-size: .76rem; color: var(--good); opacity: 0; transition: opacity .2s; }
 .impr-saved.show { opacity: 1; }
 .impr-addtier { margin-top: .3rem; }
+.impr-move-row { display: flex; align-items: center; gap: .4rem; }
+.impr-move-lbl { font-size: .76rem; color: var(--muted); }
+.impr-mover { flex: 1; min-width: 0; padding: .3rem .45rem; font-size: .82rem; cursor: pointer; }
 
 @media (max-width: 720px) {
-  .impr-board { flex-direction: column; }
+  .impr-board { flex-direction: column; gap: .7rem; }
   .impr-pool { flex: 1 1 auto; align-self: auto; width: 100%; }
+  /* Karten volle Breite, größere Tap-Ziele; Grip ausblenden (kein Drag auf Touch). */
+  .impr-tiers .impr-cards, .impr-pool .impr-cards { grid-template-columns: 1fr; display: grid; }
+  .impr-card { cursor: default; padding-top: 1.5rem; }
+  .impr-mover { font-size: 16px; padding: .5rem .55rem; }   /* kein iOS-Zoom, gut tippbar */
+  .impr-move-lbl { font-size: .8rem; }
+  .impr-tiers .impr-zone, .impr-pool .impr-zone { min-height: 64px; }
+}
+/* Auf Touch-Geräten (kein Hover) ist Drag&Drop nicht nutzbar -> Griff verbergen. */
+@media (hover: none) and (pointer: coarse) {
+  .impr-grip { display: none; }
+  .impr-card { cursor: default; }
 }
 
 /* ---- Modal ---- */
@@ -1963,6 +1977,21 @@ function imprCommentBlock(id, displayName) {
   return wrap;
 }
 
+// Auswahlmenü zum Einordnen – funktioniert auf Touch (Smartphone) genauso wie
+// Drag&Drop am Desktop.
+function imprMover(a) {
+  const row = el("div", "impr-move-row");
+  row.appendChild(el("span", "impr-move-lbl", "Stufe:"));
+  const sel = el("select", "impr-mover"); sel.draggable = false;
+  const opts = [["📥 Ablage", POOL_TIER]];
+  for (let i = 0; i < NUM_TIERS; i++) opts.push(["Stufe " + (i + 1), i]);
+  opts.forEach(([label, val]) => { const o = el("option", null, label); o.value = String(val); sel.appendChild(o); });
+  sel.value = String(imprBucket(a.id));
+  sel.addEventListener("change", async () => { await saveImpression(a.id, { tier: Number(sel.value) }); renderImpressions(); });
+  row.appendChild(sel);
+  return row;
+}
+
 function imprCardEl(a, compact) {
   const card = el("div", "impr-card" + (compact ? " compact" : ""));
   attachDrag(card, a.id);
@@ -1978,7 +2007,9 @@ function imprCardEl(a, compact) {
   card.appendChild(nameRow);
   const facts = factsLine(a); if (facts) card.appendChild(el("div", "impr-facts", facts));
 
-  if (compact) return card;  // in der Ablage nur Kurzkarte (Name, Fakten, Info)
+  card.appendChild(imprMover(a));
+
+  if (compact) return card;  // in der Ablage nur Kurzkarte (Name, Fakten, Einordnen, Info)
 
   const dRow = el("div", "impr-date");
   dRow.appendChild(el("span", null, "Gecastet am:"));
@@ -2030,7 +2061,8 @@ function renderImpressions() {
   host.appendChild(el("h3", null, "Eindrücke – Kandidat:innen einordnen"));
   host.appendChild(el("p", "impr-intro",
     "Hier erscheinen nur Kandidat:innen, die ihr bereits gecastet habt (Casting-Termin heute oder vorbei bzw. als „kennengelernt“ markiert). " +
-    "Sie liegen links in der Ablage – zieh sie mit der Maus in eine Stufe (oben = besser, mehrere pro Stufe erlaubt). " +
+    "Sie liegen links in der Ablage. Ordne sie ein: am Handy über das Auswahlmenü „Stufe“ auf jeder Karte, " +
+    "am Rechner per Ziehen mit der Maus (oben = besser, mehrere pro Stufe erlaubt). " +
     "Die Markierung über jeder Karte zeigt, wie lange das Casting her ist (grün → gelb → rot)."));
 
   const board = el("div", "impr-board");
