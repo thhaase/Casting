@@ -540,9 +540,10 @@ const CONFIG = {
 const GENERAL_KEY = "__ALLGEMEIN__";
 
 // Eindrücke-Board: 2-Wochen-Frist zum Nachfassen; POOL_TIER kennzeichnet die
-// Ablage links (noch nicht in eine Stufe einsortiert).
+// Ablage links (noch nicht in eine Stufe einsortiert). Fest 3 Stufen.
 const WRITE_WINDOW_DAYS = 14;
 const POOL_TIER = -1;
+const NUM_TIERS = 5;
 
 const STATUS_COLORS = {
   "Zugesagt": "#16a34a", "Kennengelernt": "#0d9488", "Vor-Ort-Besuch geplant": "#d97706",
@@ -1799,7 +1800,9 @@ function imprBucket(name) {
   if (!r || r.tier == null || r.tier === "") return POOL_TIER;
   const t = Number(r.tier);
   if (isNaN(t) || t < 0) return POOL_TIER;
-  return Math.round(t);
+  // Auf gültige Stufen begrenzen – verirrte/alte Werte landen in der letzten Stufe,
+  // damit nie mehr als NUM_TIERS Stufen entstehen.
+  return Math.min(NUM_TIERS - 1, Math.round(t));
 }
 function defaultInviteDate(name) {
   const m = meetingOf(name);
@@ -1826,15 +1829,6 @@ async function saveImpression(name, patch) {
   if (!row) { row = { applicant: name }; STATE.impressions.push(row); }
   Object.assign(row, patch);
   await api("impression", Object.assign({ applicant: name }, patch));
-}
-
-// Wie viele Stufen werden angezeigt: mindestens 3, mehr wenn per Button
-// hinzugefügt oder bereits belegt (in localStorage gemerkt).
-function tierCount() {
-  let want = parseInt(localStorage.getItem("wg_impr_tiers") || "", 10);
-  if (isNaN(want) || want < 3) want = 3;
-  const usedMax = APPLICANTS.reduce((mx, a) => Math.max(mx, imprBucket(a.name)), -1);
-  return Math.max(want, usedMax + 1);
 }
 
 // ---- Drag & Drop ----
@@ -1933,16 +1927,12 @@ function renderImpressions() {
   pool.appendChild(zoneEl("", "📥 Ablage", POOL_TIER, "leer – alle einsortiert 🎉", true));
   board.appendChild(pool);
 
-  // Rechts: Stufen
+  // Rechts: feste Stufen (NUM_TIERS)
   const tiersWrap = el("div", "impr-tiers");
-  const n = tierCount();
-  for (let i = 0; i < n; i++) {
-    const cls = i === 0 ? "impr-tier1" : i === 1 ? "impr-tier2" : "impr-tier3";
+  for (let i = 0; i < NUM_TIERS; i++) {
+    const cls = "impr-tier" + Math.min(3, i + 1);  // Farbakzent: 1,2,3+
     tiersWrap.appendChild(zoneEl(cls, "Stufe " + (i + 1), i, "hierher ziehen", false));
   }
-  const addBtn = el("button", "btn impr-addtier", "➕ weitere Stufe");
-  addBtn.addEventListener("click", () => { localStorage.setItem("wg_impr_tiers", String(n + 1)); renderImpressions(); });
-  tiersWrap.appendChild(addBtn);
   board.appendChild(tiersWrap);
 
   host.appendChild(board);
