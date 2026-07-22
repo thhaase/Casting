@@ -1827,16 +1827,18 @@ function defaultInviteDate(name) {
 }
 function inviteDate(name) { const r = imprOf(name); return (r && r.invitedAt) ? r.invitedAt : defaultInviteDate(name); }
 
+// Zeigt, wie lange das Casting her ist – frisch = grün, dann gelb, dann rot
+// (je näher/über die 2-Wochen-Marke zum Nachfassen).
 function writeTimer(dateStr) {
-  if (!dateStr) return { cls: "", text: "📅 Einladedatum setzen" };
+  if (!dateStr) return { cls: "", text: "🎬 kein Casting-Datum" };
   const start = new Date(dateStr + "T00:00:00");
-  if (isNaN(start)) return { cls: "", text: "📅 Einladedatum setzen" };
-  const deadline = start.getTime() + WRITE_WINDOW_DAYS * 86400000;
-  const days = Math.ceil((deadline - Date.now()) / 86400000);
-  if (days > 3) return { cls: "ok", text: `⏳ noch ${days} Tage zum Schreiben` };
-  if (days > 0) return { cls: "warn", text: `⏳ nur noch ${days} Tag${days === 1 ? "" : "e"} zum Schreiben` };
-  if (days === 0) return { cls: "warn", text: "⏳ heute schreiben!" };
-  return { cls: "over", text: `⚠️ Frist seit ${-days} Tag${days === -1 ? "" : "en"} vorbei` };
+  if (isNaN(start)) return { cls: "", text: "🎬 kein Casting-Datum" };
+  const days = Math.floor((Date.now() - start.getTime()) / 86400000);
+  let cls;
+  if (days <= 7) cls = "ok"; else if (days <= WRITE_WINDOW_DAYS) cls = "warn"; else cls = "over";
+  if (days < 0) return { cls: "", text: "🎬 Casting steht noch aus" };
+  if (days === 0) return { cls: "ok", text: "🎬 heute gecastet" };
+  return { cls, text: `🎬 gecastet vor ${days} Tag${days === 1 ? "" : "en"}` };
 }
 
 async function saveImpression(name, patch) {
@@ -1886,7 +1888,7 @@ function imprCardEl(a, compact) {
   if (compact) return card;  // in der Ablage nur Kurzkarte
 
   const dRow = el("div", "impr-date");
-  dRow.appendChild(el("span", null, "Eingeladen am:"));
+  dRow.appendChild(el("span", null, "Gecastet am:"));
   const dInp = el("input"); dInp.type = "date"; dInp.value = inviteDate(a.name) || "";
   dInp.draggable = false;
   dInp.addEventListener("change", async () => { await saveImpression(a.name, { invitedAt: dInp.value }); renderImpressions(); });
@@ -1934,7 +1936,7 @@ function renderImpressions() {
   host.appendChild(el("p", "impr-intro",
     "Hier erscheinen nur Kandidat:innen, die ihr bereits gecastet habt (Termin als „kennengelernt“ markiert). " +
     "Sie liegen links in der Ablage – zieh sie mit der Maus in eine Stufe (oben = besser, mehrere pro Stufe erlaubt). " +
-    "Der Timer über jeder Karte erinnert daran, innerhalb von 2 Wochen zu schreiben."));
+    "Die Markierung über jeder Karte zeigt, wie lange das Casting her ist (grün → gelb → rot)."));
 
   const board = el("div", "impr-board");
 
