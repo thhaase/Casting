@@ -215,39 +215,56 @@ table.grid td.cell.cell-confirmed { background: #800020 !important; box-shadow: 
 .act-btn.mini { padding: .18rem .6rem; font-size: .76rem; }
 .rank-item.closed { opacity: .5; }
 
-/* ---- Eindrücke-Board (Stufen-Ranking eingeladener Kandidat:innen) ---- */
+/* ---- Eindrücke-Board (Ablage links + Stufen zum Reinziehen) ---- */
 .impr-intro { font-size: .85rem; color: var(--muted); margin: 0 0 1rem; }
-.impr-tier { margin-bottom: 1.1rem; }
-.impr-tier-head { display: flex; align-items: center; gap: .6rem; margin: 0 0 .5rem; }
-.impr-tier-badge { font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: .12rem .6rem; white-space: nowrap; }
-.impr-tier-rule { flex: 1; height: 1px; background: var(--border); }
-.impr-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .8rem; }
-.impr-card { position: relative; border: 1px solid var(--border); border-radius: 14px; background: var(--card-bg);
-  box-shadow: var(--shadow); padding: 1.5rem .9rem .8rem; display: flex; flex-direction: column; gap: .5rem; }
-.impr-timer { position: absolute; top: -.7rem; left: .8rem; font-size: .72rem; font-weight: 600;
-  padding: .18rem .6rem; border-radius: 999px; border: 1px solid var(--border); background: var(--card-bg);
+.impr-board { display: flex; gap: 1rem; align-items: flex-start; }
+.impr-pool { flex: 0 0 230px; align-self: stretch; }
+.impr-tiers { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .8rem; }
+
+/* Drop-Zonen (Ablage + Stufen) */
+.impr-zone { border: 1px solid var(--border); border-radius: 12px; background: var(--detail-bg);
+  padding: .55rem .6rem; transition: border-color .12s, background .12s; }
+.impr-zone.drop-hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--card-bg)); }
+.impr-zone-head { display: flex; align-items: center; gap: .5rem; margin: 0 0 .5rem; }
+.impr-zone-badge { font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--muted); white-space: nowrap; }
+.impr-zone-rule { flex: 1; height: 1px; background: var(--border); }
+.impr-zone-empty { font-size: .78rem; color: var(--muted); padding: .6rem .3rem; text-align: center; }
+.impr-pool .impr-zone { min-height: 140px; }
+.impr-tiers .impr-zone { min-height: 92px; }
+.impr-tier1 { border-left: 3px solid var(--good); }
+.impr-tier2 { border-left: 3px solid var(--warn); }
+.impr-tier3 { border-left: 3px solid var(--muted); }
+
+.impr-pool .impr-cards { display: flex; flex-direction: column; gap: .5rem; }
+.impr-tiers .impr-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .6rem; }
+
+.impr-card { position: relative; border: 1px solid var(--border); border-radius: 12px; background: var(--card-bg);
+  box-shadow: var(--shadow); padding: 1.4rem .8rem .7rem; display: flex; flex-direction: column; gap: .45rem;
+  cursor: grab; }
+.impr-card.compact { padding: 1.4rem .7rem .6rem; }
+.impr-card.dragging { opacity: .45; }
+.impr-grip { position: absolute; top: .3rem; right: .45rem; color: var(--muted); font-size: .9rem; cursor: grab; user-select: none; }
+.impr-timer { position: absolute; top: -.7rem; left: .7rem; font-size: .7rem; font-weight: 600;
+  padding: .16rem .55rem; border-radius: 999px; border: 1px solid var(--border); background: var(--card-bg);
   color: var(--muted); box-shadow: var(--shadow); white-space: nowrap; }
 .impr-timer.ok { color: var(--good); border-color: var(--good); }
 .impr-timer.warn { color: var(--warn); border-color: var(--warn); }
 .impr-timer.over { color: #dc2626; border-color: #dc2626; }
-.impr-remove { position: absolute; top: .35rem; right: .5rem; border: none; background: none; color: var(--muted);
-  font-size: 1.1rem; line-height: 1; cursor: pointer; padding: .1rem .2rem; }
-.impr-remove:hover { color: #dc2626; }
-.impr-name { font-weight: 700; font-size: 1rem; }
-.impr-facts { font-size: .78rem; color: var(--muted); }
-.impr-date { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--muted); flex-wrap: wrap; }
-.impr-date input { padding: .3rem .45rem; font-size: .82rem; }
-.impr-note { width: 100%; min-height: 3.2rem; font-size: .85rem; }
-.impr-note-lbl { font-size: .78rem; color: var(--muted); }
-.impr-moves { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .1rem; }
-.impr-move { border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 8px;
-  padding: .22rem .5rem; font-size: .76rem; cursor: pointer; }
-.impr-move:hover { border-color: var(--accent); color: var(--accent); }
-.impr-move:disabled { opacity: .35; cursor: default; border-color: var(--border); color: var(--muted); }
-.impr-add-row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: .6rem; }
-.impr-saved { font-size: .78rem; color: var(--good); opacity: 0; transition: opacity .2s; }
+.impr-name { font-weight: 700; font-size: .95rem; }
+.impr-facts { font-size: .76rem; color: var(--muted); }
+.impr-date { display: flex; align-items: center; gap: .4rem; font-size: .78rem; color: var(--muted); flex-wrap: wrap; }
+.impr-date input { padding: .28rem .4rem; font-size: .8rem; }
+.impr-note { width: 100%; min-height: 3rem; font-size: .84rem; }
+.impr-note-lbl { font-size: .76rem; color: var(--muted); }
+.impr-saved { font-size: .76rem; color: var(--good); opacity: 0; transition: opacity .2s; }
 .impr-saved.show { opacity: 1; }
+.impr-addtier { margin-top: .3rem; }
+
+@media (max-width: 720px) {
+  .impr-board { flex-direction: column; }
+  .impr-pool { flex: 1 1 auto; align-self: auto; width: 100%; }
+}
 
 /* ---- Modal ---- */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 50; }
@@ -522,10 +539,10 @@ const CONFIG = {
 // (nicht mehr pro Bewerber:in).
 const GENERAL_KEY = "__ALLGEMEIN__";
 
-// Eindrücke-Board: 2-Wochen-Frist zum Nachfassen; Default-Stufe für noch nicht
-// einsortierte Kandidat:innen (großer Wert = ganz unten, alle gemeinsam).
+// Eindrücke-Board: 2-Wochen-Frist zum Nachfassen; POOL_TIER kennzeichnet die
+// Ablage links (noch nicht in eine Stufe einsortiert).
 const WRITE_WINDOW_DAYS = 14;
-const DEFAULT_TIER = 1000;
+const POOL_TIER = -1;
 
 const STATUS_COLORS = {
   "Zugesagt": "#16a34a", "Kennengelernt": "#0d9488", "Vor-Ort-Besuch geplant": "#d97706",
@@ -1775,12 +1792,14 @@ function escapeHtml(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c
 //  EINDRÜCKE-BOARD  (eingeladene Kandidat:innen: Stufen-Ranking + 2-Wochen-Timer)
 // ======================================================================
 function imprOf(name) { return STATE.impressions.find(r => r.applicant === name) || null; }
-function imprTier(name) { const r = imprOf(name); return (r && r.tier != null && r.tier !== "") ? Number(r.tier) : DEFAULT_TIER; }
-function isInvited(name) { const m = meetingOf(name); return m.state === "confirmed" || m.state === "met"; }
-function onBoard(name) {
+// Bucket der Karte: POOL_TIER (-1) = links in der Ablage, 0..n = Stufe 1..n+1.
+// Ohne Eintrag liegt jemand per Default in der Ablage.
+function imprBucket(name) {
   const r = imprOf(name);
-  if (r && r.onBoard != null && r.onBoard !== "") return Number(r.onBoard) === 1;
-  return isInvited(name);  // Default: bestätigte / kennengelernte Castings
+  if (!r || r.tier == null || r.tier === "") return POOL_TIER;
+  const t = Number(r.tier);
+  if (isNaN(t) || t < 0) return POOL_TIER;
+  return Math.round(t);
 }
 function defaultInviteDate(name) {
   const m = meetingOf(name);
@@ -1802,15 +1821,6 @@ function writeTimer(dateStr) {
   return { cls: "over", text: `⚠️ Frist seit ${-days} Tag${days === -1 ? "" : "en"} vorbei` };
 }
 
-function boardTiers() {
-  const m = APPLICANTS.filter(a => onBoard(a.name));
-  return [...new Set(m.map(a => imprTier(a.name)))].sort((x, y) => x - y);
-}
-function tierMateCount(name) {
-  const tv = imprTier(name);
-  return APPLICANTS.filter(a => onBoard(a.name) && a.name !== name && imprTier(a.name) === tv).length;
-}
-
 async function saveImpression(name, patch) {
   let row = STATE.impressions.find(r => r.applicant === name);
   if (!row) { row = { applicant: name }; STATE.impressions.push(row); }
@@ -1818,119 +1828,124 @@ async function saveImpression(name, patch) {
   await api("impression", Object.assign({ applicant: name }, patch));
 }
 
-async function moveImpr(name, dir) {
-  const cur = imprTier(name);
-  const mates = tierMateCount(name);
-  const dt = boardTiers();
-  let nt;
-  if (dir < 0) {  // höher (kleinerer Wert)
-    if (mates) nt = cur - 0.5;              // aus der Gruppe nach oben lösen
-    else { const above = dt.filter(t => t < cur); if (!above.length) return; nt = above[above.length - 1] - 0.5; }
-  } else {        // tiefer
-    if (mates) nt = cur + 0.5;
-    else { const below = dt.filter(t => t > cur); if (!below.length) return; nt = below[0] + 0.5; }
-  }
-  await saveImpression(name, { tier: nt, onBoard: 1 });
-  renderImpressions();
-}
-async function joinTierAbove(name) {
-  const cur = imprTier(name);
-  const above = boardTiers().filter(t => t < cur);
-  if (!above.length) return;
-  await saveImpression(name, { tier: above[above.length - 1], onBoard: 1 });
-  renderImpressions();
+// Wie viele Stufen werden angezeigt: mindestens 3, mehr wenn per Button
+// hinzugefügt oder bereits belegt (in localStorage gemerkt).
+function tierCount() {
+  let want = parseInt(localStorage.getItem("wg_impr_tiers") || "", 10);
+  if (isNaN(want) || want < 3) want = 3;
+  const usedMax = APPLICANTS.reduce((mx, a) => Math.max(mx, imprBucket(a.name)), -1);
+  return Math.max(want, usedMax + 1);
 }
 
-function imprCardEl(a, tiers, tv) {
-  const card = el("div", "impr-card");
+// ---- Drag & Drop ----
+let imprDrag = null;   // Name der gerade gezogenen Karte
+function attachDrag(card, name) {
+  card.draggable = true;
+  card.addEventListener("dragstart", e => {
+    imprDrag = name;
+    e.dataTransfer.effectAllowed = "move";
+    try { e.dataTransfer.setData("text/plain", name); } catch (_) {}
+    card.classList.add("dragging");
+  });
+  card.addEventListener("dragend", () => { imprDrag = null; card.classList.remove("dragging"); });
+}
+function attachDrop(zone, tier) {
+  zone.addEventListener("dragover", e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; zone.classList.add("drop-hover"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("drop-hover"));
+  zone.addEventListener("drop", async e => {
+    e.preventDefault();
+    zone.classList.remove("drop-hover");
+    const name = imprDrag || (e.dataTransfer && e.dataTransfer.getData("text/plain"));
+    if (!name || imprBucket(name) === tier) return;
+    await saveImpression(name, { tier: tier });
+    renderImpressions();
+  });
+}
+
+function imprCardEl(a, compact) {
+  const card = el("div", "impr-card" + (compact ? " compact" : ""));
+  attachDrag(card, a.name);
+  card.appendChild(el("span", "impr-grip", "⠿"));
+
   const t = writeTimer(inviteDate(a.name));
-  card.appendChild(el("span", "impr-timer" + (t.cls ? " " + t.cls : ""), t.text));
-
-  const rm = el("button", "impr-remove", "×"); rm.title = "vom Board entfernen";
-  rm.addEventListener("click", async () => { await saveImpression(a.name, { onBoard: 0 }); renderImpressions(); });
-  card.appendChild(rm);
+  // In der Ablage das Timer-Badge nur zeigen, wenn schon ein Datum gesetzt ist.
+  if (!compact || t.cls) card.appendChild(el("span", "impr-timer" + (t.cls ? " " + t.cls : ""), t.text));
 
   card.appendChild(el("div", "impr-name", a.name));
   const facts = factsLine(a); if (facts) card.appendChild(el("div", "impr-facts", facts));
 
+  if (compact) return card;  // in der Ablage nur Kurzkarte
+
   const dRow = el("div", "impr-date");
   dRow.appendChild(el("span", null, "Eingeladen am:"));
   const dInp = el("input"); dInp.type = "date"; dInp.value = inviteDate(a.name) || "";
-  dInp.addEventListener("change", async () => { await saveImpression(a.name, { invitedAt: dInp.value, onBoard: 1 }); renderImpressions(); });
+  dInp.draggable = false;
+  dInp.addEventListener("change", async () => { await saveImpression(a.name, { invitedAt: dInp.value }); renderImpressions(); });
   dRow.appendChild(dInp);
   card.appendChild(dRow);
 
   card.appendChild(el("div", "impr-note-lbl", "Gemeinsamer Eindruck:"));
   const ta = el("textarea", "impr-note");
   ta.value = (imprOf(a.name) || {}).note || "";
+  ta.draggable = false;
   ta.placeholder = "Was fandet ihr? Stärken, Bedenken, offene Fragen …";
   const saved = el("span", "impr-saved", "gespeichert ✓");
   let tmr;
   ta.addEventListener("input", () => {
     clearTimeout(tmr);
     tmr = setTimeout(async () => {
-      await saveImpression(a.name, { note: ta.value, onBoard: 1 });
+      await saveImpression(a.name, { note: ta.value });
       saved.classList.add("show"); setTimeout(() => saved.classList.remove("show"), 1200);
     }, 600);
   });
   card.appendChild(ta);
   card.appendChild(saved);
-
-  const alone = tierMateCount(a.name) === 0;
-  const isTop = tiers[0] === tv, isBottom = tiers[tiers.length - 1] === tv;
-  const moves = el("div", "impr-moves");
-  const up = el("button", "impr-move", "▲ höher"); up.disabled = isTop && alone;
-  up.addEventListener("click", () => moveImpr(a.name, -1));
-  const down = el("button", "impr-move", "▼ tiefer"); down.disabled = isBottom && alone;
-  down.addEventListener("click", () => moveImpr(a.name, +1));
-  const join = el("button", "impr-move", "= Stufe darüber"); join.disabled = isTop;
-  join.title = "auf dieselbe Stufe wie die Gruppe darüber";
-  join.addEventListener("click", () => joinTierAbove(a.name));
-  moves.appendChild(up); moves.appendChild(down); moves.appendChild(join);
-  card.appendChild(moves);
   return card;
+}
+
+function zoneEl(cls, badgeText, tier, emptyText, compact) {
+  const zone = el("div", "impr-zone" + (cls ? " " + cls : ""));
+  const head = el("div", "impr-zone-head");
+  head.appendChild(el("span", "impr-zone-badge", badgeText));
+  head.appendChild(el("div", "impr-zone-rule"));
+  zone.appendChild(head);
+  const cards = el("div", "impr-cards");
+  const members = APPLICANTS.filter(a => imprBucket(a.name) === tier)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  if (!members.length) cards.appendChild(el("div", "impr-zone-empty", emptyText));
+  else members.forEach(a => cards.appendChild(imprCardEl(a, compact)));
+  zone.appendChild(cards);
+  attachDrop(zone, tier);
+  return zone;
 }
 
 function renderImpressions() {
   const host = $("#imprCard"); host.innerHTML = "";
-  host.appendChild(el("h3", null, "Eindrücke zu eingeladenen Kandidat:innen"));
+  host.appendChild(el("h3", null, "Eindrücke – Kandidat:innen einordnen"));
   host.appendChild(el("p", "impr-intro",
-    "Ordne eingeladene Kandidat:innen nach eurem Eindruck: weiter oben = besser, mehrere dürfen auf derselben Stufe stehen. " +
-    "Der Timer über jeder Karte erinnert daran, innerhalb von 2 Wochen zu schreiben."));
+    "Links liegen alle noch nicht einsortierten Kandidat:innen in der Ablage. Zieh sie mit der Maus in eine Stufe " +
+    "(oben = besser, mehrere pro Stufe erlaubt). Der Timer über jeder Karte erinnert daran, innerhalb von 2 Wochen zu schreiben."));
 
-  const members = APPLICANTS.filter(a => onBoard(a.name));
-  if (!members.length) {
-    host.appendChild(el("p", "muted",
-      "Noch niemand eingeladen. Sobald ein Casting bestätigt oder als „kennengelernt“ markiert ist, taucht die Person hier auf – oder füge unten jemanden manuell hinzu."));
-  } else {
-    members.sort((a, b) => imprTier(a.name) - imprTier(b.name) || a.name.localeCompare(b.name));
-    const tiers = [...new Set(members.map(a => imprTier(a.name)))].sort((x, y) => x - y);
-    tiers.forEach((tv, idx) => {
-      const tier = el("div", "impr-tier");
-      const head = el("div", "impr-tier-head");
-      head.appendChild(el("span", "impr-tier-badge", "Stufe " + (idx + 1)));
-      head.appendChild(el("div", "impr-tier-rule"));
-      tier.appendChild(head);
-      const cards = el("div", "impr-cards");
-      members.filter(a => imprTier(a.name) === tv).forEach(a => cards.appendChild(imprCardEl(a, tiers, tv)));
-      tier.appendChild(cards);
-      host.appendChild(tier);
-    });
-  }
+  const board = el("div", "impr-board");
 
-  const notOn = APPLICANTS.filter(a => !onBoard(a.name));
-  if (notOn.length) {
-    const addRow = el("div", "impr-add-row");
-    addRow.appendChild(el("span", "muted", "Weitere:n hinzufügen:"));
-    const sel = el("select");
-    sel.appendChild(el("option", null, "– auswählen –"));
-    notOn.forEach(a => { const o = el("option", null, a.name); o.value = a.name; sel.appendChild(o); });
-    addRow.appendChild(sel);
-    const btn = el("button", "btn", "➕ aufs Board");
-    btn.addEventListener("click", async () => { if (!sel.value) return; await saveImpression(sel.value, { onBoard: 1 }); renderImpressions(); });
-    addRow.appendChild(btn);
-    host.appendChild(addRow);
+  // Links: Ablage
+  const pool = el("div", "impr-pool");
+  pool.appendChild(zoneEl("", "📥 Ablage", POOL_TIER, "leer – alle einsortiert 🎉", true));
+  board.appendChild(pool);
+
+  // Rechts: Stufen
+  const tiersWrap = el("div", "impr-tiers");
+  const n = tierCount();
+  for (let i = 0; i < n; i++) {
+    const cls = i === 0 ? "impr-tier1" : i === 1 ? "impr-tier2" : "impr-tier3";
+    tiersWrap.appendChild(zoneEl(cls, "Stufe " + (i + 1), i, "hierher ziehen", false));
   }
+  const addBtn = el("button", "btn impr-addtier", "➕ weitere Stufe");
+  addBtn.addEventListener("click", () => { localStorage.setItem("wg_impr_tiers", String(n + 1)); renderImpressions(); });
+  tiersWrap.appendChild(addBtn);
+  board.appendChild(tiersWrap);
+
+  host.appendChild(board);
 }
 
 // -------- boot --------
