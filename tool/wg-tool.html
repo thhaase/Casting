@@ -251,7 +251,11 @@ table.grid td.cell.cell-confirmed { background: #800020 !important; box-shadow: 
 .impr-timer.ok { color: var(--good); border-color: var(--good); }
 .impr-timer.warn { color: var(--warn); border-color: var(--warn); }
 .impr-timer.over { color: #dc2626; border-color: #dc2626; }
+.impr-name-row { display: flex; align-items: center; gap: .4rem; }
 .impr-name { font-weight: 700; font-size: .95rem; }
+.impr-card .info-btn { width: 1.25rem; height: 1.25rem; font-size: .8rem; }
+.impr-card .my-comment { margin-top: .15rem; }
+.impr-card .comment-line.muted { font-size: .78rem; }
 .impr-facts { font-size: .76rem; color: var(--muted); }
 .impr-date { display: flex; align-items: center; gap: .4rem; font-size: .78rem; color: var(--muted); flex-wrap: wrap; }
 .impr-date input { padding: .28rem .4rem; font-size: .8rem; }
@@ -1873,6 +1877,81 @@ function attachDrop(zone, tier) {
   });
 }
 
+// SVG-Icons (identisch zur Übersicht) für den Kommentar-Button.
+const IMPR_COMMENT_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+const IMPR_EDIT_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+
+// Info-"i", öffnet den kompletten Bewerbungstext – hilft, Namensdopplungen
+// (z. B. zwei „Clara“) auseinanderzuhalten.
+function imprInfoBtn(a) {
+  const fullText = (a.bewerbertext || "").trim();
+  if (!fullText) return null;
+  const info = el("button", "info-btn", "i");
+  info.type = "button"; info.draggable = false;
+  info.title = "Kompletter Bewerbungstext";
+  info.setAttribute("aria-label", "Kompletten Bewerbungstext anzeigen");
+  info.addEventListener("click", ev => { ev.stopPropagation(); openFullText(a.name, fullText); });
+  return info;
+}
+
+// Kommentar-Block: zeigt die Kommentare aller Mitbewohner:innen und lässt
+// mich (ME) meinen eigenen hinzufügen/bearbeiten (nutzt die votes-Kommentare,
+// dieselben wie in der Übersicht).
+function imprCommentBlock(name) {
+  const wrap = el("div", "my-comment");
+  const mine = STATE.votes.find(v => v.applicant === name && v.voter === ME) || {};
+  const hasComment = !!(mine.comment || "").trim();
+
+  const toggle = el("button", "comment-toggle");
+  toggle.type = "button"; toggle.draggable = false;
+  toggle.title = hasComment ? "Kommentar bearbeiten" : "Kommentieren";
+  toggle.setAttribute("aria-label", toggle.title);
+  toggle.innerHTML = (hasComment ? IMPR_EDIT_ICON : IMPR_COMMENT_ICON)
+    + (hasComment ? '<span class="comment-toggle-label">Edit</span>' : '');
+
+  const editor = el("div", "comment-editor hidden");
+  const ta = el("textarea"); ta.draggable = false;
+  ta.placeholder = "Dein Kommentar zu " + name + " (nur für die WG sichtbar)";
+  ta.value = mine.comment || "";
+  const actions = el("div", "comment-actions");
+  const sendBtn = el("button", "btn primary", "Speichern"); sendBtn.type = "button";
+  const cancelBtn = el("button", "btn", "Abbrechen"); cancelBtn.type = "button";
+  toggle.addEventListener("click", () => {
+    const opening = editor.classList.contains("hidden");
+    editor.classList.toggle("hidden", !opening);
+    if (opening) ta.focus();
+  });
+  cancelBtn.addEventListener("click", () => { ta.value = mine.comment || ""; editor.classList.add("hidden"); });
+  sendBtn.addEventListener("click", async () => {
+    if ((ta.value || "") !== (mine.comment || "")) {
+      await saveVote(name, Number((myVote(name) || {}).rating) || 0, ta.value);
+      renderImpressions();
+    } else {
+      editor.classList.add("hidden");
+    }
+  });
+  actions.appendChild(sendBtn); actions.appendChild(cancelBtn);
+  editor.appendChild(ta); editor.appendChild(actions);
+
+  const cbody = el("div", "comment-body");
+  const comments = votesFor(name).filter(v => (v.comment || "").trim());
+  if (comments.length) {
+    const cbox = el("div", "comments");
+    comments.forEach(v => {
+      const line = el("div", "comment-line");
+      line.innerHTML = `<b>${escapeHtml(v.voter)}:</b> ${escapeHtml(v.comment)}`;
+      cbox.appendChild(line);
+    });
+    cbody.appendChild(cbox);
+  } else {
+    cbody.appendChild(el("div", "comment-line muted", "Noch keine Kommentare"));
+  }
+  cbody.appendChild(editor);
+  wrap.appendChild(toggle);
+  wrap.appendChild(cbody);
+  return wrap;
+}
+
 function imprCardEl(a, compact) {
   const card = el("div", "impr-card" + (compact ? " compact" : ""));
   attachDrag(card, a.name);
@@ -1882,10 +1961,13 @@ function imprCardEl(a, compact) {
   // In der Ablage das Timer-Badge nur zeigen, wenn schon ein Datum gesetzt ist.
   if (!compact || t.cls) card.appendChild(el("span", "impr-timer" + (t.cls ? " " + t.cls : ""), t.text));
 
-  card.appendChild(el("div", "impr-name", a.name));
+  const nameRow = el("div", "impr-name-row");
+  nameRow.appendChild(el("span", "impr-name", a.name));
+  const info = imprInfoBtn(a); if (info) nameRow.appendChild(info);
+  card.appendChild(nameRow);
   const facts = factsLine(a); if (facts) card.appendChild(el("div", "impr-facts", facts));
 
-  if (compact) return card;  // in der Ablage nur Kurzkarte
+  if (compact) return card;  // in der Ablage nur Kurzkarte (Name, Fakten, Info)
 
   const dRow = el("div", "impr-date");
   dRow.appendChild(el("span", null, "Gecastet am:"));
@@ -1899,7 +1981,7 @@ function imprCardEl(a, compact) {
   const ta = el("textarea", "impr-note");
   ta.value = (imprOf(a.name) || {}).note || "";
   ta.draggable = false;
-  ta.placeholder = "Was fandet ihr? Stärken, Bedenken, offene Fragen …";
+  ta.placeholder = "Was fandet ihr gemeinsam? Stärken, Bedenken, offene Fragen …";
   const saved = el("span", "impr-saved", "gespeichert ✓");
   let tmr;
   ta.addEventListener("input", () => {
@@ -1911,6 +1993,8 @@ function imprCardEl(a, compact) {
   });
   card.appendChild(ta);
   card.appendChild(saved);
+
+  card.appendChild(imprCommentBlock(a.name));
   return card;
 }
 
