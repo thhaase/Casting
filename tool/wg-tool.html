@@ -1804,9 +1804,19 @@ function imprBucket(name) {
   // damit nie mehr als NUM_TIERS Stufen entstehen.
   return Math.min(NUM_TIERS - 1, Math.round(t));
 }
-// Nur wer tatsächlich gecastet/besucht wurde (Termin als „kennengelernt“
-// markiert) kommt aufs Board.
-function isCasted(name) { return meetingOf(name).state === "met"; }
+// Nur wer tatsächlich gecastet/besucht wurde kommt aufs Board: entweder der
+// Termin ist als „kennengelernt“ markiert – oder ein bestätigtes Casting
+// findet heute statt (dann noch als „bestätigt“, aber schon relevant).
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function isCasted(name) {
+  const m = meetingOf(name);
+  if (m.state === "met") return true;
+  if (m.state === "confirmed" && m.confirmedSlot) return String(m.confirmedSlot).split("T")[0] === todayISO();
+  return false;
+}
 function boardCandidates() { return APPLICANTS.filter(a => isCasted(a.name)); }
 
 function defaultInviteDate(name) {
