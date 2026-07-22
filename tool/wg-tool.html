@@ -1804,6 +1804,11 @@ function imprBucket(name) {
   // damit nie mehr als NUM_TIERS Stufen entstehen.
   return Math.min(NUM_TIERS - 1, Math.round(t));
 }
+// Nur wer tatsächlich gecastet/besucht wurde (Termin als „kennengelernt“
+// markiert) kommt aufs Board.
+function isCasted(name) { return meetingOf(name).state === "met"; }
+function boardCandidates() { return APPLICANTS.filter(a => isCasted(a.name)); }
+
 function defaultInviteDate(name) {
   const m = meetingOf(name);
   if (m.confirmedSlot) return String(m.confirmedSlot).split("T")[0];
@@ -1904,7 +1909,7 @@ function zoneEl(cls, badgeText, tier, emptyText, compact) {
   head.appendChild(el("div", "impr-zone-rule"));
   zone.appendChild(head);
   const cards = el("div", "impr-cards");
-  const members = APPLICANTS.filter(a => imprBucket(a.name) === tier)
+  const members = boardCandidates().filter(a => imprBucket(a.name) === tier)
     .sort((a, b) => a.name.localeCompare(b.name));
   if (!members.length) cards.appendChild(el("div", "impr-zone-empty", emptyText));
   else members.forEach(a => cards.appendChild(imprCardEl(a, compact)));
@@ -1917,14 +1922,18 @@ function renderImpressions() {
   const host = $("#imprCard"); host.innerHTML = "";
   host.appendChild(el("h3", null, "Eindrücke – Kandidat:innen einordnen"));
   host.appendChild(el("p", "impr-intro",
-    "Links liegen alle noch nicht einsortierten Kandidat:innen in der Ablage. Zieh sie mit der Maus in eine Stufe " +
-    "(oben = besser, mehrere pro Stufe erlaubt). Der Timer über jeder Karte erinnert daran, innerhalb von 2 Wochen zu schreiben."));
+    "Hier erscheinen nur Kandidat:innen, die ihr bereits gecastet habt (Termin als „kennengelernt“ markiert). " +
+    "Sie liegen links in der Ablage – zieh sie mit der Maus in eine Stufe (oben = besser, mehrere pro Stufe erlaubt). " +
+    "Der Timer über jeder Karte erinnert daran, innerhalb von 2 Wochen zu schreiben."));
 
   const board = el("div", "impr-board");
 
   // Links: Ablage
   const pool = el("div", "impr-pool");
-  pool.appendChild(zoneEl("", "📥 Ablage", POOL_TIER, "leer – alle einsortiert 🎉", true));
+  const anyCasted = boardCandidates().length > 0;
+  const poolEmpty = anyCasted ? "leer – alle einsortiert 🎉"
+    : "Noch niemand gecastet. Markiere einen Termin unter „Termine“ als „kennengelernt“.";
+  pool.appendChild(zoneEl("", "📥 Ablage", POOL_TIER, poolEmpty, true));
   board.appendChild(pool);
 
   // Rechts: feste Stufen (NUM_TIERS)
