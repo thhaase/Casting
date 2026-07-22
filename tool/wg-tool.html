@@ -215,6 +215,40 @@ table.grid td.cell.cell-confirmed { background: #800020 !important; box-shadow: 
 .act-btn.mini { padding: .18rem .6rem; font-size: .76rem; }
 .rank-item.closed { opacity: .5; }
 
+/* ---- Eindrücke-Board (Stufen-Ranking eingeladener Kandidat:innen) ---- */
+.impr-intro { font-size: .85rem; color: var(--muted); margin: 0 0 1rem; }
+.impr-tier { margin-bottom: 1.1rem; }
+.impr-tier-head { display: flex; align-items: center; gap: .6rem; margin: 0 0 .5rem; }
+.impr-tier-badge { font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: .12rem .6rem; white-space: nowrap; }
+.impr-tier-rule { flex: 1; height: 1px; background: var(--border); }
+.impr-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .8rem; }
+.impr-card { position: relative; border: 1px solid var(--border); border-radius: 14px; background: var(--card-bg);
+  box-shadow: var(--shadow); padding: 1.5rem .9rem .8rem; display: flex; flex-direction: column; gap: .5rem; }
+.impr-timer { position: absolute; top: -.7rem; left: .8rem; font-size: .72rem; font-weight: 600;
+  padding: .18rem .6rem; border-radius: 999px; border: 1px solid var(--border); background: var(--card-bg);
+  color: var(--muted); box-shadow: var(--shadow); white-space: nowrap; }
+.impr-timer.ok { color: var(--good); border-color: var(--good); }
+.impr-timer.warn { color: var(--warn); border-color: var(--warn); }
+.impr-timer.over { color: #dc2626; border-color: #dc2626; }
+.impr-remove { position: absolute; top: .35rem; right: .5rem; border: none; background: none; color: var(--muted);
+  font-size: 1.1rem; line-height: 1; cursor: pointer; padding: .1rem .2rem; }
+.impr-remove:hover { color: #dc2626; }
+.impr-name { font-weight: 700; font-size: 1rem; }
+.impr-facts { font-size: .78rem; color: var(--muted); }
+.impr-date { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--muted); flex-wrap: wrap; }
+.impr-date input { padding: .3rem .45rem; font-size: .82rem; }
+.impr-note { width: 100%; min-height: 3.2rem; font-size: .85rem; }
+.impr-note-lbl { font-size: .78rem; color: var(--muted); }
+.impr-moves { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .1rem; }
+.impr-move { border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 8px;
+  padding: .22rem .5rem; font-size: .76rem; cursor: pointer; }
+.impr-move:hover { border-color: var(--accent); color: var(--accent); }
+.impr-move:disabled { opacity: .35; cursor: default; border-color: var(--border); color: var(--muted); }
+.impr-add-row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: .6rem; }
+.impr-saved { font-size: .78rem; color: var(--good); opacity: 0; transition: opacity .2s; }
+.impr-saved.show { opacity: 1; }
+
 /* ---- Modal ---- */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 50; }
 .modal-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
@@ -388,6 +422,7 @@ html { -webkit-text-size-adjust: 100%; }
       <button class="btn active" data-tab="over"><span class="ti">👥</span><span class="tl">Übersicht</span></button>
       <button class="btn" data-tab="sched"><span class="ti">📅</span><span class="tl">Termine</span></button>
       <button class="btn" data-tab="cal"><span class="ti">📆</span><span class="tl">Castings</span></button>
+      <button class="btn" data-tab="impr"><span class="ti">💭</span><span class="tl">Eindrücke</span></button>
     </nav>
 
     <!-- Übersicht + Voten -->
@@ -426,6 +461,11 @@ html { -webkit-text-size-adjust: 100%; }
     <!-- Castings-Kalender -->
     <section id="tab-cal" class="hidden">
       <div class="card" id="calCard"></div>
+    </section>
+
+    <!-- Eindrücke zu eingeladenen Kandidat:innen -->
+    <section id="tab-impr" class="hidden">
+      <div class="card" id="imprCard"></div>
     </section>
   </main>
 </div>
@@ -482,6 +522,11 @@ const CONFIG = {
 // (nicht mehr pro Bewerber:in).
 const GENERAL_KEY = "__ALLGEMEIN__";
 
+// Eindrücke-Board: 2-Wochen-Frist zum Nachfassen; Default-Stufe für noch nicht
+// einsortierte Kandidat:innen (großer Wert = ganz unten, alle gemeinsam).
+const WRITE_WINDOW_DAYS = 14;
+const DEFAULT_TIER = 1000;
+
 const STATUS_COLORS = {
   "Zugesagt": "#16a34a", "Kennengelernt": "#0d9488", "Vor-Ort-Besuch geplant": "#d97706",
   "Online-Kennenlernen geplant": "#6366f1", "Beworben": "#64748b", "Abgesagt": "#dc2626",
@@ -493,7 +538,7 @@ const $ = sel => document.querySelector(sel);
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 
 let ME = localStorage.getItem("wg_me") || "";
-let STATE = { votes: [], avail: [], meetings: [] };
+let STATE = { votes: [], avail: [], meetings: [], impressions: [] };
 let APPLICANTS = [];
 let AI = { aiConfigured: false, aiModel: "" };   // KI-Status (Gemini) vom Backend
 let openCards = {};   // name -> bool (Detail aufgeklappt)
@@ -501,8 +546,8 @@ let openCards = {};   // name -> bool (Detail aufgeklappt)
 // -------- Netzwerk / Mock --------
 function mockKey() { return "wg_mock_state"; }
 function mockLoad() {
-  try { const s = JSON.parse(localStorage.getItem(mockKey())) || {}; return { votes: s.votes || [], avail: s.avail || [], meetings: s.meetings || [], applicants: s.applicants || null }; }
-  catch (e) { return { votes: [], avail: [], meetings: [], applicants: null }; }
+  try { const s = JSON.parse(localStorage.getItem(mockKey())) || {}; return { votes: s.votes || [], avail: s.avail || [], meetings: s.meetings || [], impressions: s.impressions || [], applicants: s.applicants || null }; }
+  catch (e) { return { votes: [], avail: [], meetings: [], impressions: [], applicants: null }; }
 }
 function mockSave(s) { localStorage.setItem(mockKey(), JSON.stringify(s)); }
 function mockUpsert(list, applicant, voter, fields) {
@@ -515,10 +560,15 @@ function mockUpsertMeeting(list, applicant, fields) {
   if (!row) { row = { applicant }; list.push(row); }
   Object.assign(row, fields, { updated: new Date().toISOString() });
 }
+function mockUpsertImpression(list, applicant, fields) {
+  let row = list.find(r => r.applicant === applicant);
+  if (!row) { row = { applicant }; list.push(row); }
+  Object.assign(row, fields, { updated: new Date().toISOString() });
+}
 async function api(action, payload = {}) {
   if (MOCK) {
     const s = mockLoad();
-    if (action === "state") return { ok: true, votes: s.votes, avail: s.avail, meetings: s.meetings };
+    if (action === "state") return { ok: true, votes: s.votes, avail: s.avail, meetings: s.meetings, impressions: s.impressions };
     if (action === "applicants") return { ok: true, applicants: s.applicants || CONFIG.FALLBACK_APPLICANTS };
     if (action === "config") return { ok: true, aiConfigured: false, aiModel: "(Testmodus – keine KI)" };
     if (action === "set_config") return { ok: true, aiConfigured: false, aiModel: "(Testmodus)" };
@@ -538,12 +588,14 @@ async function api(action, payload = {}) {
       s.votes = (s.votes || []).filter(v => !names.includes(v.applicant));
       s.avail = (s.avail || []).filter(v => !names.includes(v.applicant));
       s.meetings = (s.meetings || []).filter(m => !names.includes(m.applicant));
+      s.impressions = (s.impressions || []).filter(m => !names.includes(m.applicant));
       mockSave(s);
       return { ok: true, deleted: names };
     }
     if (action === "vote") { mockUpsert(s.votes, payload.applicant, payload.voter, { rating: payload.rating, comment: payload.comment }); mockSave(s); return { ok: true }; }
     if (action === "avail") { mockUpsert(s.avail, payload.applicant, payload.voter, { slotsJSON: payload.slots }); mockSave(s); return { ok: true }; }
     if (action === "meeting") { const { applicant, ...rest } = payload; mockUpsertMeeting(s.meetings, applicant, rest); mockSave(s); return { ok: true }; }
+    if (action === "impression") { const { applicant, ...rest } = payload; mockUpsertImpression(s.impressions, applicant, rest); mockSave(s); return { ok: true }; }
     return { ok: false, error: "unknown" };
   }
   const body = Object.assign({ action, code: CONFIG.ACCESS_CODE }, payload);
@@ -552,7 +604,7 @@ async function api(action, payload = {}) {
 }
 async function refreshState() {
   const r = await api("state");
-  if (r && r.ok) { STATE.votes = r.votes || []; STATE.avail = r.avail || []; STATE.meetings = r.meetings || []; }
+  if (r && r.ok) { STATE.votes = r.votes || []; STATE.avail = r.avail || []; STATE.meetings = r.meetings || []; STATE.impressions = r.impressions || []; }
 }
 async function loadApplicants() {
   // Bewerber:innen kommen jetzt aus dem Backend (Quelle der Wahrheit).
@@ -617,8 +669,10 @@ document.querySelectorAll(".tabs .btn[data-tab]").forEach(b => {
     $("#tab-over").classList.toggle("hidden", t !== "over");
     $("#tab-sched").classList.toggle("hidden", t !== "sched");
     $("#tab-cal").classList.toggle("hidden", t !== "cal");
+    $("#tab-impr").classList.toggle("hidden", t !== "impr");
     if (t === "sched") renderSched();
     if (t === "cal") renderCalendar();
+    if (t === "impr") renderImpressions();
   });
 });
 
@@ -1717,6 +1771,168 @@ function copyText(t) {
 function flash(node) { if (!node) return; node.classList.add("show"); setTimeout(() => node.classList.remove("show"), 1200); }
 function escapeHtml(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
+// ======================================================================
+//  EINDRÜCKE-BOARD  (eingeladene Kandidat:innen: Stufen-Ranking + 2-Wochen-Timer)
+// ======================================================================
+function imprOf(name) { return STATE.impressions.find(r => r.applicant === name) || null; }
+function imprTier(name) { const r = imprOf(name); return (r && r.tier != null && r.tier !== "") ? Number(r.tier) : DEFAULT_TIER; }
+function isInvited(name) { const m = meetingOf(name); return m.state === "confirmed" || m.state === "met"; }
+function onBoard(name) {
+  const r = imprOf(name);
+  if (r && r.onBoard != null && r.onBoard !== "") return Number(r.onBoard) === 1;
+  return isInvited(name);  // Default: bestätigte / kennengelernte Castings
+}
+function defaultInviteDate(name) {
+  const m = meetingOf(name);
+  if (m.confirmedSlot) return String(m.confirmedSlot).split("T")[0];
+  if (m.proposedAt) return String(m.proposedAt).slice(0, 10);
+  return "";
+}
+function inviteDate(name) { const r = imprOf(name); return (r && r.invitedAt) ? r.invitedAt : defaultInviteDate(name); }
+
+function writeTimer(dateStr) {
+  if (!dateStr) return { cls: "", text: "📅 Einladedatum setzen" };
+  const start = new Date(dateStr + "T00:00:00");
+  if (isNaN(start)) return { cls: "", text: "📅 Einladedatum setzen" };
+  const deadline = start.getTime() + WRITE_WINDOW_DAYS * 86400000;
+  const days = Math.ceil((deadline - Date.now()) / 86400000);
+  if (days > 3) return { cls: "ok", text: `⏳ noch ${days} Tage zum Schreiben` };
+  if (days > 0) return { cls: "warn", text: `⏳ nur noch ${days} Tag${days === 1 ? "" : "e"} zum Schreiben` };
+  if (days === 0) return { cls: "warn", text: "⏳ heute schreiben!" };
+  return { cls: "over", text: `⚠️ Frist seit ${-days} Tag${days === -1 ? "" : "en"} vorbei` };
+}
+
+function boardTiers() {
+  const m = APPLICANTS.filter(a => onBoard(a.name));
+  return [...new Set(m.map(a => imprTier(a.name)))].sort((x, y) => x - y);
+}
+function tierMateCount(name) {
+  const tv = imprTier(name);
+  return APPLICANTS.filter(a => onBoard(a.name) && a.name !== name && imprTier(a.name) === tv).length;
+}
+
+async function saveImpression(name, patch) {
+  let row = STATE.impressions.find(r => r.applicant === name);
+  if (!row) { row = { applicant: name }; STATE.impressions.push(row); }
+  Object.assign(row, patch);
+  await api("impression", Object.assign({ applicant: name }, patch));
+}
+
+async function moveImpr(name, dir) {
+  const cur = imprTier(name);
+  const mates = tierMateCount(name);
+  const dt = boardTiers();
+  let nt;
+  if (dir < 0) {  // höher (kleinerer Wert)
+    if (mates) nt = cur - 0.5;              // aus der Gruppe nach oben lösen
+    else { const above = dt.filter(t => t < cur); if (!above.length) return; nt = above[above.length - 1] - 0.5; }
+  } else {        // tiefer
+    if (mates) nt = cur + 0.5;
+    else { const below = dt.filter(t => t > cur); if (!below.length) return; nt = below[0] + 0.5; }
+  }
+  await saveImpression(name, { tier: nt, onBoard: 1 });
+  renderImpressions();
+}
+async function joinTierAbove(name) {
+  const cur = imprTier(name);
+  const above = boardTiers().filter(t => t < cur);
+  if (!above.length) return;
+  await saveImpression(name, { tier: above[above.length - 1], onBoard: 1 });
+  renderImpressions();
+}
+
+function imprCardEl(a, tiers, tv) {
+  const card = el("div", "impr-card");
+  const t = writeTimer(inviteDate(a.name));
+  card.appendChild(el("span", "impr-timer" + (t.cls ? " " + t.cls : ""), t.text));
+
+  const rm = el("button", "impr-remove", "×"); rm.title = "vom Board entfernen";
+  rm.addEventListener("click", async () => { await saveImpression(a.name, { onBoard: 0 }); renderImpressions(); });
+  card.appendChild(rm);
+
+  card.appendChild(el("div", "impr-name", a.name));
+  const facts = factsLine(a); if (facts) card.appendChild(el("div", "impr-facts", facts));
+
+  const dRow = el("div", "impr-date");
+  dRow.appendChild(el("span", null, "Eingeladen am:"));
+  const dInp = el("input"); dInp.type = "date"; dInp.value = inviteDate(a.name) || "";
+  dInp.addEventListener("change", async () => { await saveImpression(a.name, { invitedAt: dInp.value, onBoard: 1 }); renderImpressions(); });
+  dRow.appendChild(dInp);
+  card.appendChild(dRow);
+
+  card.appendChild(el("div", "impr-note-lbl", "Gemeinsamer Eindruck:"));
+  const ta = el("textarea", "impr-note");
+  ta.value = (imprOf(a.name) || {}).note || "";
+  ta.placeholder = "Was fandet ihr? Stärken, Bedenken, offene Fragen …";
+  const saved = el("span", "impr-saved", "gespeichert ✓");
+  let tmr;
+  ta.addEventListener("input", () => {
+    clearTimeout(tmr);
+    tmr = setTimeout(async () => {
+      await saveImpression(a.name, { note: ta.value, onBoard: 1 });
+      saved.classList.add("show"); setTimeout(() => saved.classList.remove("show"), 1200);
+    }, 600);
+  });
+  card.appendChild(ta);
+  card.appendChild(saved);
+
+  const alone = tierMateCount(a.name) === 0;
+  const isTop = tiers[0] === tv, isBottom = tiers[tiers.length - 1] === tv;
+  const moves = el("div", "impr-moves");
+  const up = el("button", "impr-move", "▲ höher"); up.disabled = isTop && alone;
+  up.addEventListener("click", () => moveImpr(a.name, -1));
+  const down = el("button", "impr-move", "▼ tiefer"); down.disabled = isBottom && alone;
+  down.addEventListener("click", () => moveImpr(a.name, +1));
+  const join = el("button", "impr-move", "= Stufe darüber"); join.disabled = isTop;
+  join.title = "auf dieselbe Stufe wie die Gruppe darüber";
+  join.addEventListener("click", () => joinTierAbove(a.name));
+  moves.appendChild(up); moves.appendChild(down); moves.appendChild(join);
+  card.appendChild(moves);
+  return card;
+}
+
+function renderImpressions() {
+  const host = $("#imprCard"); host.innerHTML = "";
+  host.appendChild(el("h3", null, "Eindrücke zu eingeladenen Kandidat:innen"));
+  host.appendChild(el("p", "impr-intro",
+    "Ordne eingeladene Kandidat:innen nach eurem Eindruck: weiter oben = besser, mehrere dürfen auf derselben Stufe stehen. " +
+    "Der Timer über jeder Karte erinnert daran, innerhalb von 2 Wochen zu schreiben."));
+
+  const members = APPLICANTS.filter(a => onBoard(a.name));
+  if (!members.length) {
+    host.appendChild(el("p", "muted",
+      "Noch niemand eingeladen. Sobald ein Casting bestätigt oder als „kennengelernt“ markiert ist, taucht die Person hier auf – oder füge unten jemanden manuell hinzu."));
+  } else {
+    members.sort((a, b) => imprTier(a.name) - imprTier(b.name) || a.name.localeCompare(b.name));
+    const tiers = [...new Set(members.map(a => imprTier(a.name)))].sort((x, y) => x - y);
+    tiers.forEach((tv, idx) => {
+      const tier = el("div", "impr-tier");
+      const head = el("div", "impr-tier-head");
+      head.appendChild(el("span", "impr-tier-badge", "Stufe " + (idx + 1)));
+      head.appendChild(el("div", "impr-tier-rule"));
+      tier.appendChild(head);
+      const cards = el("div", "impr-cards");
+      members.filter(a => imprTier(a.name) === tv).forEach(a => cards.appendChild(imprCardEl(a, tiers, tv)));
+      tier.appendChild(cards);
+      host.appendChild(tier);
+    });
+  }
+
+  const notOn = APPLICANTS.filter(a => !onBoard(a.name));
+  if (notOn.length) {
+    const addRow = el("div", "impr-add-row");
+    addRow.appendChild(el("span", "muted", "Weitere:n hinzufügen:"));
+    const sel = el("select");
+    sel.appendChild(el("option", null, "– auswählen –"));
+    notOn.forEach(a => { const o = el("option", null, a.name); o.value = a.name; sel.appendChild(o); });
+    addRow.appendChild(sel);
+    const btn = el("button", "btn", "➕ aufs Board");
+    btn.addEventListener("click", async () => { if (!sel.value) return; await saveImpression(sel.value, { onBoard: 1 }); renderImpressions(); });
+    addRow.appendChild(btn);
+    host.appendChild(addRow);
+  }
+}
+
 // -------- boot --------
 async function boot() {
   await Promise.all([loadApplicants(), refreshState(), loadAiConfig()]);
@@ -1726,6 +1942,7 @@ async function boot() {
     await refreshState();
     if (!$("#tab-over").classList.contains("hidden")) renderOverview();
     else if (!$("#tab-cal").classList.contains("hidden")) renderCalendar();
+    else if (!$("#tab-impr").classList.contains("hidden")) { if (!$("#imprCard").contains(document.activeElement)) renderImpressions(); }
     else if (mode === "all") renderAllGrid();
   }, 20000);
 }

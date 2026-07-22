@@ -71,6 +71,12 @@ MEETINGS_COLS = ["applicant", "state", "proposedSlots", "proposedAt",
                  "proposedBy", "owner", "responseSlots", "confirmedSlot", "updated"]
 MEETING_FIELDS = MEETINGS_COLS[1:-1]
 
+# Eindrücke zu eingeladenen Bewerber:innen: gemeinsame Notiz, Einladedatum
+# (für die 2-Wochen-Frist) und eine Stufen-Sortierung (tier: kleiner = weiter oben,
+# gleiche Werte = gleiche Stufe). onBoard: 1 = manuell aufs Board, 0 = ausgeblendet.
+IMPRESSIONS_COLS = ["applicant", "tier", "invitedAt", "note", "onBoard", "updated"]
+IMPRESSION_FIELDS = IMPRESSIONS_COLS[1:-1]
+
 # Bewerber:innen-Felder (wie applicants.json / wg-tool.html erwartet).
 APPLICANT_SCALARS = ["name", "status", "alter", "studium_beruf", "sprache",
                      "kennenlernen", "einzug", "eindruck"]
@@ -123,6 +129,10 @@ def init_db(db):
         );
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY, value TEXT
+        );
+        CREATE TABLE IF NOT EXISTS impressions (
+            applicant TEXT PRIMARY KEY, tier REAL, invitedAt TEXT,
+            note TEXT, onBoard INTEGER, updated TEXT
         );
         """
     )
@@ -204,6 +214,7 @@ def api():
                 votes=read_table(db, "votes", VOTES_COLS),
                 avail=read_table(db, "avail", AVAIL_COLS),
                 meetings=read_table(db, "meetings", MEETINGS_COLS),
+                impressions=read_table(db, "impressions", IMPRESSIONS_COLS),
             )
 
         if action == "applicants":
@@ -249,6 +260,26 @@ def api():
             upsert_meeting(db, applicant, fields)
             return jsonify(ok=True)
 
+        if action == "impression":
+            applicant = str(params.get("applicant") or "").strip()
+            if not applicant:
+                return jsonify(ok=False, error="applicant fehlt.")
+            fields = {}
+            for k in IMPRESSION_FIELDS:
+                if params.get(k) is None:
+                    continue
+                if k == "tier":
+                    try:
+                        fields[k] = float(params[k])
+                    except (TypeError, ValueError):
+                        continue
+                elif k == "onBoard":
+                    fields[k] = 1 if params[k] in (1, "1", True, "true") else 0
+                else:
+                    fields[k] = str(params[k])
+            upsert_impression(db, applicant, fields)
+            return jsonify(ok=True)
+
         if action == "set_config":
             if "gemini_api_key" in params:
                 key = str(params.get("gemini_api_key") or "").strip()
@@ -279,6 +310,7 @@ def api():
                 db.execute("DELETE FROM votes WHERE applicant = ?", (name,))
                 db.execute("DELETE FROM avail WHERE applicant = ?", (name,))
                 db.execute("DELETE FROM meetings WHERE applicant = ?", (name,))
+                db.execute("DELETE FROM impressions WHERE applicant = ?", (name,))
                 deleted.append(name)
             db.commit()
             return jsonify(ok=True, deleted=deleted)
@@ -313,6 +345,18 @@ def upsert_meeting(db, applicant, fields):
     updates = ", ".join(f"{c}=excluded.{c}" for c in fields)
     db.execute(
         f"INSERT INTO meetings ({', '.join(cols)}) VALUES ({placeholders}) "
+        f"ON CONFLICT(applicant) DO UPDATE SET {updates}", vals)
+    db.commit()
+
+
+def upsert_impression(db, applicant, fields):
+    fields = dict(fields, updated=now_iso())
+    cols = ["applicant"] + list(fields.keys())
+    vals = [applicant] + list(fields.values())
+    placeholders = ", ".join(["?"] * len(cols))
+    updates = ", ".join(f"{c}=excluded.{c}" for c in fields)
+    db.execute(
+        f"INSERT INTO impressions ({', '.join(cols)}) VALUES ({placeholders}) "
         f"ON CONFLICT(applicant) DO UPDATE SET {updates}", vals)
     db.commit()
 
