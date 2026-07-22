@@ -596,7 +596,7 @@ async function api(action, payload = {}) {
     if (action === "set_config") return { ok: true, aiConfigured: false, aiModel: "(Testmodus)" };
     if (action === "add_applicant") {
       const list = s.applicants || CONFIG.FALLBACK_APPLICANTS.slice();
-      const app = { name: payload.name || "Neue:r Bewerber:in", status: "Beworben",
+      const app = { id: "m" + Date.now().toString(36), name: payload.name || "Neue:r Bewerber:in", status: "Beworben",
         alter: payload.alter || "", studium_beruf: "", kennenlernen: "", einzug: "", eindruck: "",
         situation: payload.text ? [payload.text.slice(0, 200)] : [], person: [], erwartung: [],
         bewerbertext: payload.text || "" };
@@ -604,15 +604,18 @@ async function api(action, payload = {}) {
       return { ok: true, applicant: app, raw: "(Testmodus: kein KI-Text)" };
     }
     if (action === "delete_applicant") {
-      const names = payload.names || (payload.applicant ? [payload.applicant] : []);
+      const ids = payload.ids || payload.names || (payload.applicant ? [payload.applicant] : []);
       const list = s.applicants || CONFIG.FALLBACK_APPLICANTS.slice();
-      s.applicants = list.filter(a => !names.includes(a.name));
-      s.votes = (s.votes || []).filter(v => !names.includes(v.applicant));
-      s.avail = (s.avail || []).filter(v => !names.includes(v.applicant));
-      s.meetings = (s.meetings || []).filter(m => !names.includes(m.applicant));
-      s.impressions = (s.impressions || []).filter(m => !names.includes(m.applicant));
+      // Im Testmodus dient der Name als id.
+      const match = x => ids.includes(x.id) || ids.includes(x.name);
+      const matchRef = ref => ids.includes(ref);
+      s.applicants = list.filter(a => !match(a));
+      s.votes = (s.votes || []).filter(v => !matchRef(v.applicant));
+      s.avail = (s.avail || []).filter(v => !matchRef(v.applicant));
+      s.meetings = (s.meetings || []).filter(m => !matchRef(m.applicant));
+      s.impressions = (s.impressions || []).filter(m => !matchRef(m.applicant));
       mockSave(s);
-      return { ok: true, deleted: names };
+      return { ok: true, deleted: ids };
     }
     if (action === "vote") { mockUpsert(s.votes, payload.applicant, payload.voter, { rating: payload.rating, comment: payload.comment }); mockSave(s); return { ok: true }; }
     if (action === "avail") { mockUpsert(s.avail, payload.applicant, payload.voter, { slotsJSON: payload.slots }); mockSave(s); return { ok: true }; }
@@ -632,14 +635,17 @@ async function loadApplicants() {
   // Bewerber:innen kommen jetzt aus dem Backend (Quelle der Wahrheit).
   try {
     const r = await api("applicants");
-    if (r && r.ok && Array.isArray(r.applicants)) { APPLICANTS = r.applicants; return; }
+    if (r && r.ok && Array.isArray(r.applicants)) { APPLICANTS = r.applicants; ensureIds(); return; }
   } catch (e) { /* Backend nicht erreichbar -> Fallback */ }
   try {
     const res = await fetch("applicants.json", { cache: "no-store" });
-    if (res.ok) { APPLICANTS = await res.json(); return; }
+    if (res.ok) { APPLICANTS = await res.json(); ensureIds(); return; }
   } catch (e) { /* file:// oder fehlt -> Fallback */ }
   APPLICANTS = CONFIG.FALLBACK_APPLICANTS;
+  ensureIds();
 }
+// Fallback/Testmodus haben evtl. keine id -> Name als id verwenden (dort eindeutig).
+function ensureIds() { APPLICANTS.forEach(a => { if (!a.id) a.id = a.name; }); }
 async function loadAiConfig() {
   try { const r = await api("config"); if (r && r.ok) AI = r; } catch (e) { /* egal */ }
 }
@@ -738,7 +744,8 @@ function renderOverview() {
   // Neueste zuerst: zuletzt hinzugefügte Bewerber:innen oben anzeigen
   APPLICANTS.slice().reverse().forEach(app => {
     const name = app.name;
-    const mine = myVote(name) || {};
+    const id = app.id;
+    const mine = myVote(id) || {};
     const card = el("div", "appl" + (openCards[name] ? " open" : ""));
     const head = el("div", "appl-head");
 
@@ -771,7 +778,7 @@ function renderOverview() {
     // Bewertungen der Mitbewohner:innen – eigene Zeile über die volle Breite
     // (unter Name + eigenen Sternen), damit im 2-Spalten-Raster nichts abgeschnitten wird.
     const chips = el("div", "voter-chips");
-    votesFor(name).forEach(v => {
+    votesFor(id).forEach(v => {
       if (Number(v.rating) > 0) {
         const c = el("span", "chip");
         c.innerHTML = `${escapeHtml(v.voter)}: <span class="g">${"★".repeat(Number(v.rating))}</span>`;
@@ -788,9 +795,9 @@ function renderOverview() {
       const s = el("span", "star", "★"); s.dataset.val = i;
       if (Number(mine.rating) >= i) s.classList.add("on");
       s.addEventListener("click", async () => {
-        const cur = Number((myVote(name) || {}).rating) || 0;
+        const cur = Number((myVote(id) || {}).rating) || 0;
         const val = (cur === i) ? 0 : i;
-        await saveVote(name, val, (myVote(name) || {}).comment || "");
+        await saveVote(id, val, (myVote(id) || {}).comment || "");
         flash(savedEl); renderOverview();
       });
       starsEl.appendChild(s);
@@ -833,7 +840,7 @@ function renderOverview() {
     });
     sendBtn.addEventListener("click", async () => {
       if ((ta.value || "") !== (mine.comment || "")) {
-        await saveVote(name, Number((myVote(name) || {}).rating) || 0, ta.value);
+        await saveVote(id, Number((myVote(id) || {}).rating) || 0, ta.value);
         flash(savedEl); renderOverview();
       } else {
         editor.classList.add("hidden");
@@ -847,7 +854,7 @@ function renderOverview() {
 
     // Kommentar-Icon links, daneben/darunter die Kommentare der Mitbewohner:innen
     const cbody = el("div", "comment-body");
-    const comments = votesFor(name).filter(v => (v.comment || "").trim());
+    const comments = votesFor(id).filter(v => (v.comment || "").trim());
     if (comments.length) {
       const cbox = el("div", "comments");
       comments.forEach(v => {
@@ -985,7 +992,7 @@ function openDeleteApplicant() {
   const boxes = [];
   APPLICANTS.forEach(app => {
     const row = el("label", "del-row");
-    const cb = el("input"); cb.type = "checkbox"; cb.value = app.name;
+    const cb = el("input"); cb.type = "checkbox"; cb.value = app.id;
     boxes.push(cb);
     row.appendChild(cb);
     row.appendChild(el("span", null, app.name + (app.alter ? " (" + app.alter + ")" : "")));
@@ -1009,7 +1016,7 @@ function openDeleteApplicant() {
   });
   openModal(box);
 }
-function confirmDeleteApplicants(names) {
+function confirmDeleteApplicants(ids) {
   // Schritt 2: endgültige Bestätigung.
   const box = el("div");
   box.appendChild(el("h3", null, "Wirklich löschen?"));
@@ -1017,7 +1024,7 @@ function confirmDeleteApplicants(names) {
   warn.innerHTML = "Folgende Person(en) werden <b>endgültig</b> aus der Datenbank gelöscht – samt ihrer Votes, Verfügbarkeiten und Termine. Das kann nicht rückgängig gemacht werden.";
   box.appendChild(warn);
   const ul = el("ul");
-  names.forEach(n => ul.appendChild(el("li", null, n)));
+  ids.forEach(n => ul.appendChild(el("li", null, nameOf(n))));
   box.appendChild(ul);
   const err = el("p", "form-err");
   box.appendChild(err);
@@ -1034,7 +1041,7 @@ function confirmDeleteApplicants(names) {
     del.disabled = true; back.disabled = true;
     const label = del.textContent; del.textContent = "Lösche …";
     try {
-      const r = await api("delete_applicant", { names });
+      const r = await api("delete_applicant", { ids });
       if (r && r.ok) {
         await loadApplicants();
         renderOverview();
@@ -1258,10 +1265,10 @@ function meetingProposals() {
   const out = [];
   STATE.meetings.forEach(m => {
     if (m.state === "confirmed" || m.state === "met") {
-      if (m.confirmedSlot) out.push({ name: m.applicant, kind: m.state, slots: [m.confirmedSlot] });
+      if (m.confirmedSlot) out.push({ name: nameOf(m.applicant), kind: m.state, slots: [m.confirmedSlot] });
     } else if (m.state === "proposed" || m.state === "responded") {
       const s = parseSlots(m.proposedSlots);
-      if (s.length) out.push({ name: m.applicant, kind: "proposed", slots: s });
+      if (s.length) out.push({ name: nameOf(m.applicant), kind: "proposed", slots: s });
     }
   });
   return out;
@@ -1346,7 +1353,11 @@ function renderLegend(all) {
 // ======================================================================
 // Zustände: none -> proposed -> confirmed -> met  (umplanen: confirmed -> confirmed mit neuem Termin)
 // ("responded" gibt es als eigener Schritt nicht mehr; Altdaten werden wie "proposed" behandelt.)
-function meetingOf(name) { return STATE.meetings.find(m => m.applicant === name) || { applicant: name, state: "none" }; }
+// Identität ist jetzt die id (Namen dürfen doppelt sein). Anzeige über den Namen.
+function applicantById(id) { return APPLICANTS.find(a => a.id === id) || null; }
+function nameOf(id) { const a = applicantById(id); return a ? a.name : id; }
+
+function meetingOf(id) { return STATE.meetings.find(m => m.applicant === id) || { applicant: id, state: "none" }; }
 function parseSlots(v) { if (!v) return []; if (Array.isArray(v)) return v; try { return JSON.parse(v) || []; } catch (e) { return []; } }
 function daysSince(iso) { if (!iso) return null; return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
 function statusClosed(app) { return app && (app.status === "Abgesagt" || app.status === "Abgesprungen" || app.status === "Zugesagt"); }
@@ -1365,8 +1376,8 @@ async function saveMeeting(name, patch) {
 
 // Kategorisiert eine:n Bewerber:in für Rangliste + Banner.
 function workState(app) {
-  const m = meetingOf(app.name);
-  const a = avgOf(app.name);
+  const m = meetingOf(app.id);
+  const a = avgOf(app.id);
   if (statusClosed(app)) return { kind: "closed", m };
   if (m.state === "confirmed" || m.state === "met") return { kind: m.state, m };
   if (m.state === "proposed" || m.state === "responded") {
@@ -1383,9 +1394,9 @@ function renderRanking() {
   const box = $("#rankBox"); box.classList.remove("hidden"); box.innerHTML = "";
   box.appendChild(el("h3", null, "Bewerber:innen-Ranking & nächste Aktion"));
   const rows = APPLICANTS.map(app => {
-    const a = avgOf(app.name);
+    const a = avgOf(app.id);
     return { app, name: app.name, avg: a ? a.avg : null, n: a ? a.n : 0, sum: a ? a.sum : 0,
-             votes: votesFor(app.name).filter(v => Number(v.rating) > 0) };
+             votes: votesFor(app.id).filter(v => Number(v.rating) > 0) };
   });
   rows.sort((x, y) => {
     if ((y.avg == null) - (x.avg == null)) return (x.avg == null) - (y.avg == null);
@@ -1437,7 +1448,7 @@ function actionRow(app, ws) {
   } else if (ws.kind === "confirmed") {
     badge("confirmed", "✔️ " + (m.confirmedSlot ? fmtSlot(m.confirmedSlot) : "bestätigt"));
     button("ghost mini", "🔄 umplanen", () => openSchedule(app));
-    button("ghost mini", "kennengelernt ✓", async () => { await saveMeeting(app.name, { state: "met" }); renderAllGrid(); });
+    button("ghost mini", "kennengelernt ✓", async () => { await saveMeeting(app.id, { state: "met" }); renderAllGrid(); });
   } else if (ws.kind === "met") {
     badge("confirmed", "✅ kennengelernt" + (m.confirmedSlot ? " (" + fmtSlot(m.confirmedSlot) + ")" : ""));
     button("ghost mini", "🔄 umplanen", () => openSchedule(app));
@@ -1523,7 +1534,7 @@ function takenByOthers(name) {
 }
 
 function openPropose(app, reopen) {
-  const m = meetingOf(app.name);
+  const m = meetingOf(app.id);
   const isEdit = parseSlots(m.proposedSlots).length > 0;
   const box = el("div");
   box.appendChild(el("h3", null, (isEdit ? "Vorschlag ändern – " : "Termine vorschlagen – ") + app.name));
@@ -1537,7 +1548,7 @@ function openPropose(app, reopen) {
   ownerRow.appendChild(ownerSel);
   box.appendChild(ownerRow);
 
-  const taken = takenByOthers(app.name);
+  const taken = takenByOthers(app.id);
   const already = parseSlots(m.proposedSlots);
   const suggested = topSlots(60).filter(s => !taken.has(s.key)).slice(0, 6);
   if (!suggested.length && !already.length) {
@@ -1580,7 +1591,7 @@ function openPropose(app, reopen) {
   saveBtn.addEventListener("click", async () => {
     const chosen = opts.filter(o => o.checked).map(o => o.value);
     if (!chosen.length) { alert("Bitte mindestens einen Termin auswählen."); return; }
-    await saveMeeting(app.name, { state: "proposed", proposedSlots: JSON.stringify(chosen),
+    await saveMeeting(app.id, { state: "proposed", proposedSlots: JSON.stringify(chosen),
       proposedAt: new Date().toISOString(), proposedBy: ME, owner: ownerSel.value, responseSlots: "[]", confirmedSlot: "" });
     closeModal(); renderAllGrid();
   });
@@ -1594,7 +1605,7 @@ function openPropose(app, reopen) {
 // sowie frische freie Überschneidungen (nicht an andere vergeben) – so lässt sich auch
 // kurzfristig auf einen ganz neuen Termin umplanen.
 function openSchedule(app) {
-  const m = meetingOf(app.name);
+  const m = meetingOf(app.id);
   const isResched = (m.state === "confirmed" || m.state === "met");
   const box = el("div");
   box.appendChild(el("h3", null, (isResched ? "Termin ändern – " : "Termin eintragen – ") + app.name));
@@ -1603,7 +1614,7 @@ function openSchedule(app) {
     : "Welcher Termin wurde vereinbart?"));
 
   const counts = countAvail();
-  const taken = takenByOthers(app.name);
+  const taken = takenByOthers(app.id);
   const keys = [], seen = new Set();
   const add = k => { if (k && !seen.has(k)) { seen.add(k); keys.push(k); } };
   parseSlots(m.proposedSlots).forEach(add);
@@ -1629,7 +1640,7 @@ function openSchedule(app) {
   saveBtn.addEventListener("click", async () => {
     const chosen = opts.find(o => o.checked);
     if (!chosen) { alert("Bitte einen Termin wählen."); return; }
-    await saveMeeting(app.name, { state: "confirmed", confirmedSlot: chosen.value });
+    await saveMeeting(app.id, { state: "confirmed", confirmedSlot: chosen.value });
     closeModal(); renderAllGrid();
   });
   actions.appendChild(saveBtn);
@@ -1655,7 +1666,7 @@ let calCursor = null;  // erster Tag des angezeigten Monats
 function confirmedMeetings() {
   return STATE.meetings
     .filter(m => (m.state === "confirmed" || m.state === "met") && m.confirmedSlot)
-    .map(m => { const [iso, time] = String(m.confirmedSlot).split("T"); return { name: m.applicant, iso, time, state: m.state }; });
+    .map(m => { const [iso, time] = String(m.confirmedSlot).split("T"); return { name: nameOf(m.applicant), iso, time, state: m.state }; });
 }
 
 function renderCalendar() {
@@ -1809,19 +1820,19 @@ function imprBucket(name) {
   return Math.min(NUM_TIERS - 1, Math.round(t));
 }
 // Nur wer tatsächlich gecastet/besucht wurde kommt aufs Board: entweder der
-// Termin ist als „kennengelernt“ markiert – oder ein bestätigtes Casting
-// findet heute statt (dann noch als „bestätigt“, aber schon relevant).
+// Termin ist als „kennengelernt“ markiert – oder ein bestätigtes Casting liegt
+// heute oder in der Vergangenheit (das Casting hat also schon stattgefunden).
 function todayISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
-function isCasted(name) {
-  const m = meetingOf(name);
+function isCasted(id) {
+  const m = meetingOf(id);
   if (m.state === "met") return true;
-  if (m.state === "confirmed" && m.confirmedSlot) return String(m.confirmedSlot).split("T")[0] === todayISO();
+  if (m.state === "confirmed" && m.confirmedSlot) return String(m.confirmedSlot).split("T")[0] <= todayISO();
   return false;
 }
-function boardCandidates() { return APPLICANTS.filter(a => isCasted(a.name)); }
+function boardCandidates() { return APPLICANTS.filter(a => isCasted(a.id)); }
 
 function defaultInviteDate(name) {
   const m = meetingOf(name);
@@ -1870,9 +1881,9 @@ function attachDrop(zone, tier) {
   zone.addEventListener("drop", async e => {
     e.preventDefault();
     zone.classList.remove("drop-hover");
-    const name = imprDrag || (e.dataTransfer && e.dataTransfer.getData("text/plain"));
-    if (!name || imprBucket(name) === tier) return;
-    await saveImpression(name, { tier: tier });
+    const id = imprDrag || (e.dataTransfer && e.dataTransfer.getData("text/plain"));
+    if (!id || imprBucket(id) === tier) return;
+    await saveImpression(id, { tier: tier });
     renderImpressions();
   });
 }
@@ -1897,9 +1908,9 @@ function imprInfoBtn(a) {
 // Kommentar-Block: zeigt die Kommentare aller Mitbewohner:innen und lässt
 // mich (ME) meinen eigenen hinzufügen/bearbeiten (nutzt die votes-Kommentare,
 // dieselben wie in der Übersicht).
-function imprCommentBlock(name) {
+function imprCommentBlock(id, displayName) {
   const wrap = el("div", "my-comment");
-  const mine = STATE.votes.find(v => v.applicant === name && v.voter === ME) || {};
+  const mine = STATE.votes.find(v => v.applicant === id && v.voter === ME) || {};
   const hasComment = !!(mine.comment || "").trim();
 
   const toggle = el("button", "comment-toggle");
@@ -1911,7 +1922,7 @@ function imprCommentBlock(name) {
 
   const editor = el("div", "comment-editor hidden");
   const ta = el("textarea"); ta.draggable = false;
-  ta.placeholder = "Dein Kommentar zu " + name + " (nur für die WG sichtbar)";
+  ta.placeholder = "Dein Kommentar zu " + displayName + " (nur für die WG sichtbar)";
   ta.value = mine.comment || "";
   const actions = el("div", "comment-actions");
   const sendBtn = el("button", "btn primary", "Speichern"); sendBtn.type = "button";
@@ -1924,7 +1935,7 @@ function imprCommentBlock(name) {
   cancelBtn.addEventListener("click", () => { ta.value = mine.comment || ""; editor.classList.add("hidden"); });
   sendBtn.addEventListener("click", async () => {
     if ((ta.value || "") !== (mine.comment || "")) {
-      await saveVote(name, Number((myVote(name) || {}).rating) || 0, ta.value);
+      await saveVote(id, Number((myVote(id) || {}).rating) || 0, ta.value);
       renderImpressions();
     } else {
       editor.classList.add("hidden");
@@ -1934,7 +1945,7 @@ function imprCommentBlock(name) {
   editor.appendChild(ta); editor.appendChild(actions);
 
   const cbody = el("div", "comment-body");
-  const comments = votesFor(name).filter(v => (v.comment || "").trim());
+  const comments = votesFor(id).filter(v => (v.comment || "").trim());
   if (comments.length) {
     const cbox = el("div", "comments");
     comments.forEach(v => {
@@ -1954,10 +1965,10 @@ function imprCommentBlock(name) {
 
 function imprCardEl(a, compact) {
   const card = el("div", "impr-card" + (compact ? " compact" : ""));
-  attachDrag(card, a.name);
+  attachDrag(card, a.id);
   card.appendChild(el("span", "impr-grip", "⠿"));
 
-  const t = writeTimer(inviteDate(a.name));
+  const t = writeTimer(inviteDate(a.id));
   // In der Ablage das Timer-Badge nur zeigen, wenn schon ein Datum gesetzt ist.
   if (!compact || t.cls) card.appendChild(el("span", "impr-timer" + (t.cls ? " " + t.cls : ""), t.text));
 
@@ -1971,15 +1982,15 @@ function imprCardEl(a, compact) {
 
   const dRow = el("div", "impr-date");
   dRow.appendChild(el("span", null, "Gecastet am:"));
-  const dInp = el("input"); dInp.type = "date"; dInp.value = inviteDate(a.name) || "";
+  const dInp = el("input"); dInp.type = "date"; dInp.value = inviteDate(a.id) || "";
   dInp.draggable = false;
-  dInp.addEventListener("change", async () => { await saveImpression(a.name, { invitedAt: dInp.value }); renderImpressions(); });
+  dInp.addEventListener("change", async () => { await saveImpression(a.id, { invitedAt: dInp.value }); renderImpressions(); });
   dRow.appendChild(dInp);
   card.appendChild(dRow);
 
   card.appendChild(el("div", "impr-note-lbl", "Gemeinsamer Eindruck:"));
   const ta = el("textarea", "impr-note");
-  ta.value = (imprOf(a.name) || {}).note || "";
+  ta.value = (imprOf(a.id) || {}).note || "";
   ta.draggable = false;
   ta.placeholder = "Was fandet ihr gemeinsam? Stärken, Bedenken, offene Fragen …";
   const saved = el("span", "impr-saved", "gespeichert ✓");
@@ -1987,14 +1998,14 @@ function imprCardEl(a, compact) {
   ta.addEventListener("input", () => {
     clearTimeout(tmr);
     tmr = setTimeout(async () => {
-      await saveImpression(a.name, { note: ta.value });
+      await saveImpression(a.id, { note: ta.value });
       saved.classList.add("show"); setTimeout(() => saved.classList.remove("show"), 1200);
     }, 600);
   });
   card.appendChild(ta);
   card.appendChild(saved);
 
-  card.appendChild(imprCommentBlock(a.name));
+  card.appendChild(imprCommentBlock(a.id, a.name));
   return card;
 }
 
@@ -2005,7 +2016,7 @@ function zoneEl(cls, badgeText, tier, emptyText, compact) {
   head.appendChild(el("div", "impr-zone-rule"));
   zone.appendChild(head);
   const cards = el("div", "impr-cards");
-  const members = boardCandidates().filter(a => imprBucket(a.name) === tier)
+  const members = boardCandidates().filter(a => imprBucket(a.id) === tier)
     .sort((a, b) => a.name.localeCompare(b.name));
   if (!members.length) cards.appendChild(el("div", "impr-zone-empty", emptyText));
   else members.forEach(a => cards.appendChild(imprCardEl(a, compact)));
@@ -2018,7 +2029,7 @@ function renderImpressions() {
   const host = $("#imprCard"); host.innerHTML = "";
   host.appendChild(el("h3", null, "Eindrücke – Kandidat:innen einordnen"));
   host.appendChild(el("p", "impr-intro",
-    "Hier erscheinen nur Kandidat:innen, die ihr bereits gecastet habt (Termin als „kennengelernt“ markiert). " +
+    "Hier erscheinen nur Kandidat:innen, die ihr bereits gecastet habt (Casting-Termin heute oder vorbei bzw. als „kennengelernt“ markiert). " +
     "Sie liegen links in der Ablage – zieh sie mit der Maus in eine Stufe (oben = besser, mehrere pro Stufe erlaubt). " +
     "Die Markierung über jeder Karte zeigt, wie lange das Casting her ist (grün → gelb → rot)."));
 

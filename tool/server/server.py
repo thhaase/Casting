@@ -42,6 +42,7 @@ import re
 import sqlite3
 import urllib.error
 import urllib.request
+import uuid
 from datetime import datetime, timedelta, timezone
 
 try:
@@ -122,7 +123,7 @@ def init_db(db):
             responseSlots TEXT, confirmedSlot TEXT, updated TEXT
         );
         CREATE TABLE IF NOT EXISTS applicants (
-            name TEXT PRIMARY KEY, status TEXT, "alter" TEXT, studium_beruf TEXT,
+            id TEXT PRIMARY KEY, name TEXT, status TEXT, "alter" TEXT, studium_beruf TEXT,
             sprache TEXT, kennenlernen TEXT, einzug TEXT, eindruck TEXT,
             situation TEXT, person TEXT, erwartung TEXT,
             raw_md TEXT, bewerbertext TEXT, created TEXT
@@ -144,6 +145,72 @@ def init_db(db):
     if "sprache" not in have:
         db.execute('ALTER TABLE applicants ADD COLUMN sprache TEXT DEFAULT ""')
     db.commit()
+    migrate_to_ids(db)
+
+
+def new_id():
+    return uuid.uuid4().hex[:12]
+
+
+# Alte DBs verwendeten den Namen als Schlüssel – bei gleichen Namen (z. B. zwei
+# „Clara“) hat das Anlegen die vorige Person überschrieben. Diese Migration führt
+# eine stabile id ein und schreibt alle Referenztabellen (votes/avail/meetings/
+# impressions) von Name auf id um. Läuft genau einmal (danach hat applicants
+# bereits eine id-Spalte).
+def migrate_to_ids(db):
+    if "id" in {row[1] for row in db.execute("PRAGMA table_info(applicants)").fetchall()}:
+        return
+
+    # Exklusiven Schreibzugriff holen, damit bei mehreren gunicorn-Workern nur EINER
+    # migriert. Läuft komplett in einer Transaktion (DDL ist in SQLite transaktional),
+    # daher kein executescript (das würde die Transaktion vorzeitig committen).
+    prev_iso = db.isolation_level
+    db.isolation_level = None
+    try:
+        try:
+            db.execute("BEGIN IMMEDIATE")
+        except sqlite3.OperationalError:
+            return  # anderer Worker hält den Lock und migriert gerade -> überspringen
+
+        if "id" in {row[1] for row in db.execute("PRAGMA table_info(applicants)").fetchall()}:
+            db.execute("COMMIT")
+            return
+
+        old = db.execute("SELECT * FROM applicants ORDER BY rowid").fetchall()
+        copy_cols = ["name", "status", "alter", "studium_beruf", "sprache", "kennenlernen",
+                     "einzug", "eindruck", "situation", "person", "erwartung",
+                     "raw_md", "bewerbertext", "created"]
+        name_to_id = {}
+        rows = []
+        for r in old:
+            keys = r.keys()
+            aid = new_id()
+            name_to_id[r["name"]] = aid
+            rows.append([aid] + [(r[c] if c in keys else None) for c in copy_cols])
+
+        db.execute("ALTER TABLE applicants RENAME TO applicants_old")
+        db.execute(
+            'CREATE TABLE applicants ('
+            'id TEXT PRIMARY KEY, name TEXT, status TEXT, "alter" TEXT, studium_beruf TEXT,'
+            'sprache TEXT, kennenlernen TEXT, einzug TEXT, eindruck TEXT,'
+            'situation TEXT, person TEXT, erwartung TEXT,'
+            'raw_md TEXT, bewerbertext TEXT, created TEXT)'
+        )
+        collist = ", ".join(['id'] + [f'"{c}"' for c in copy_cols])
+        placeholders = ", ".join(["?"] * (len(copy_cols) + 1))
+        db.executemany(f"INSERT INTO applicants ({collist}) VALUES ({placeholders})", rows)
+        db.execute("DROP TABLE applicants_old")
+
+        # Referenztabellen von Name auf id umschreiben (unbekannte Werte wie der
+        # Sammel-Schlüssel für die allgemeine Verfügbarkeit bleiben unverändert).
+        for tbl in ("votes", "avail", "meetings", "impressions"):
+            for r in db.execute(f"SELECT rowid, applicant FROM {tbl}").fetchall():
+                aid = name_to_id.get(r["applicant"])
+                if aid:
+                    db.execute(f"UPDATE {tbl} SET applicant = ? WHERE rowid = ?", (aid, r["rowid"]))
+        db.execute("COMMIT")
+    finally:
+        db.isolation_level = prev_iso
 
 
 def seed_applicants(db):
@@ -292,26 +359,27 @@ def api():
                            aiModel=get_setting(db, "gemini_model", DEFAULT_MODEL))
 
         if action == "delete_applicant":
-            names = params.get("names")
-            if not isinstance(names, list):
-                one = str(params.get("applicant") or params.get("name") or "").strip()
-                names = [one] if one else []
-            names = [str(n).strip() for n in names if str(n).strip()]
-            if not names:
+            # Löschen erfolgt jetzt über die id (Namen sind nicht mehr eindeutig).
+            ids = params.get("ids")
+            if not isinstance(ids, list):
+                one = str(params.get("id") or params.get("applicant") or "").strip()
+                ids = [one] if one else []
+            ids = [str(n).strip() for n in ids if str(n).strip()]
+            if not ids:
                 return jsonify(ok=False, error="Keine Bewerber:innen angegeben.")
             deleted = []
-            for name in names:
+            for aid in ids:
                 exists = db.execute(
-                    "SELECT 1 FROM applicants WHERE name = ?", (name,)
+                    "SELECT 1 FROM applicants WHERE id = ?", (aid,)
                 ).fetchone()
                 if not exists:
                     continue
-                db.execute("DELETE FROM applicants WHERE name = ?", (name,))
-                db.execute("DELETE FROM votes WHERE applicant = ?", (name,))
-                db.execute("DELETE FROM avail WHERE applicant = ?", (name,))
-                db.execute("DELETE FROM meetings WHERE applicant = ?", (name,))
-                db.execute("DELETE FROM impressions WHERE applicant = ?", (name,))
-                deleted.append(name)
+                db.execute("DELETE FROM applicants WHERE id = ?", (aid,))
+                db.execute("DELETE FROM votes WHERE applicant = ?", (aid,))
+                db.execute("DELETE FROM avail WHERE applicant = ?", (aid,))
+                db.execute("DELETE FROM meetings WHERE applicant = ?", (aid,))
+                db.execute("DELETE FROM impressions WHERE applicant = ?", (aid,))
+                deleted.append(aid)
             db.commit()
             return jsonify(ok=True, deleted=deleted)
 
@@ -370,6 +438,7 @@ def read_applicants(db):
     out = []
     for r in rows:
         a = {k: r[k] for k in APPLICANT_SCALARS}
+        a["id"] = r["id"]
         for k in APPLICANT_LISTS:
             try:
                 a[k] = json.loads(r[k]) if r[k] else []
@@ -383,22 +452,27 @@ def read_applicants(db):
     return out
 
 
-def insert_applicant(db, a, raw_md="", bewerbertext=""):
-    """Fügt eine Bewerber:in ein (überschreibt bei gleichem Namen)."""
-    cols = APPLICANT_SCALARS + APPLICANT_LISTS + ["raw_md", "bewerbertext", "created"]
-    vals = [a.get(k, "") for k in APPLICANT_SCALARS]
+def insert_applicant(db, a, aid=None, raw_md="", bewerbertext=""):
+    """Legt eine Bewerber:in an (neue id) oder aktualisiert die per aid gegebene.
+    Gleiche Namen sind erlaubt – die id ist der Schlüssel. Gibt die id zurück."""
+    aid = aid or new_id()
+    cols = ["id"] + APPLICANT_SCALARS + APPLICANT_LISTS + ["raw_md", "bewerbertext", "created"]
+    vals = [aid] + [a.get(k, "") for k in APPLICANT_SCALARS]
     vals += [json.dumps(a.get(k, []) or [], ensure_ascii=False) for k in APPLICANT_LISTS]
     vals += [raw_md, bewerbertext, now_iso()]
     placeholders = ", ".join(["?"] * len(cols))
     # Spaltennamen quoten ("alter" ist ein SQL-Schlüsselwort).
     collist = ", ".join(f'"{c}"' for c in cols)
-    updates = ", ".join(f'"{c}"=excluded."{c}"' for c in cols if c != "name")
+    updates = ", ".join(f'"{c}"=excluded."{c}"' for c in cols if c != "id")
     db.execute(
         f"INSERT INTO applicants ({collist}) VALUES ({placeholders}) "
-        f"ON CONFLICT(name) DO UPDATE SET {updates}", vals)
+        f"ON CONFLICT(id) DO UPDATE SET {updates}", vals)
+    return aid
 
 
 def add_applicant(db, params):
+    # Optionale id: gesetzt -> bestehende Bewerber:in aktualisieren; sonst neu anlegen.
+    aid = str(params.get("id") or "").strip() or None
     name = str(params.get("name") or "").strip()
     alter = str(params.get("alter") or "").strip()
     text = str(params.get("text") or "").strip()
@@ -429,7 +503,8 @@ def add_applicant(db, params):
         return jsonify(ok=False, error="Konnte keinen Namen ermitteln – bitte Namensfeld ausfüllen.")
     applicant.setdefault("status", "Beworben")
 
-    insert_applicant(db, applicant, raw_md=raw_md, bewerbertext=text)
+    aid = insert_applicant(db, applicant, aid=aid, raw_md=raw_md, bewerbertext=text)
+    applicant["id"] = aid
     db.commit()
     return jsonify(ok=True, applicant=applicant, raw=raw_md)
 
@@ -568,6 +643,8 @@ def _parse_slot_list(v):
 
 def build_ics(db):
     rows = read_table(db, "meetings", MEETINGS_COLS)
+    # meetings.applicant ist jetzt eine id -> Namen für die Anzeige nachschlagen.
+    id2name = {r["id"]: r["name"] for r in db.execute("SELECT id, name FROM applicants").fetchall()}
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     lines = [
         "BEGIN:VCALENDAR",
@@ -579,7 +656,8 @@ def build_ics(db):
         "X-WR-TIMEZONE:" + CASTING_TZ,
     ]
     for m in rows:
-        name = (m.get("applicant") or "Casting").strip()
+        aid = (m.get("applicant") or "").strip()
+        name = (id2name.get(aid) or "Casting").strip()
         state = m.get("state")
         # Nur bestätigte / stattgefundene Castings als feste Termine exportieren.
         if state not in ("confirmed", "met") or not m.get("confirmedSlot"):
@@ -590,8 +668,8 @@ def build_ics(db):
             continue
         end = start + timedelta(minutes=SLOT_MINUTES)
         slot_safe = re.sub(r"[^0-9A-Za-z]", "", m["confirmedSlot"])
-        name_safe = re.sub(r"[^0-9A-Za-z]", "", name) or "casting"
-        uid = f"{name_safe}-{slot_safe}@casting.thhaase.de"
+        id_safe = re.sub(r"[^0-9A-Za-z]", "", aid) or "casting"
+        uid = f"{id_safe}-{slot_safe}@casting.thhaase.de"
         summary = ("Casting: " if state == "confirmed" else "Casting (kennengelernt): ") + name
         lines += [
             "BEGIN:VEVENT",
